@@ -20,12 +20,12 @@ extend-ignore =
   # black
   WPS348
   # weird
-  PIE803 C101 FNE008
+  PIE803 C101 FNE008 N812 ANN101 ANN102 WPS110 WPS111 VNE001
   # broken
-  PIE798 WPS226 WPS354
+  PIE798 WPS226 WPS354 WPS507
 
   # don't block features
-  WPS305  # f-strings are the best
+  WPS237 WPS305  # f-strings are the best
   WPS306  # python 2.x is deprecated
   WPS420  # pass is a thing
   WPS430  # nested functions
