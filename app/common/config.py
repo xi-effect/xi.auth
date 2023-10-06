@@ -1,14 +1,14 @@
 from os import getenv
 from pathlib import Path
 
-from sqlalchemy import MetaData, Text, create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker as Sessionmaker
+from sqlalchemy import MetaData
+from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
 
 from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
 
-# indexes, unique & check constraints, foreign & primary key namings
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
     "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
@@ -17,12 +17,14 @@ convention = {
     "pk": "pk_%(table_name)s",  # noqa: WPS323
 }
 
-db_url: str = getenv("DB_LINK", f"sqlite:///{current_directory / 'xieffect/app.db'}")
-engine = create_engine(db_url, pool_recycle=280, echo=True)  # noqa: WPS432
+db_url: str = getenv("DB_LINK", f"sqlite+aiosqlite:///{current_directory / 'app.db'}")
+engine = create_async_engine(db_url, pool_recycle=280, echo=True)  # noqa: WPS432
 db_meta = MetaData(naming_convention=convention)
-sessionmaker = Sessionmaker(bind=engine)
+sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
-class Base(DeclarativeBase, MappingBase):
+class Base(AsyncAttrs, DeclarativeBase, MappingBase):
+    __tablename__: str
+    __abstract__: bool
+
     metadata = db_meta
-    type_annotation_map = {str: Text}
