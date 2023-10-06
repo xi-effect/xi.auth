@@ -9,6 +9,9 @@ from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
 
+PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
+DATABASE_RESET: bool = getenv("DATABASE_RESET", "0") == "1"
+
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
     "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
