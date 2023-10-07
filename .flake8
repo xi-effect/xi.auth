@@ -9,6 +9,8 @@ literal-multiline-quotes = "double"
 literal-docstring-quotes = "double"
 literal-include-name = true
 
+rst-roles = py:class, py:func, py:ref, py:attr
+
 # black
 max-line-length = 88
 

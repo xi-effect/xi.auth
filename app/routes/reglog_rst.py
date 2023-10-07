@@ -52,6 +52,7 @@ async def signin(user_data: User.InputModel, response: Response) -> User:
 
     session = await Session.create(user=user)
     response.headers[AUTH_HEADER] = session.token
+    await Session.cleanup_by_user(user.id)
 
     return user
 
