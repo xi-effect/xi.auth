@@ -1,16 +1,9 @@
-from typing import Annotated
-
 from fastapi import APIRouter, HTTPException
-from pydantic import AfterValidator
 from starlette.status import HTTP_404_NOT_FOUND
 
-from app.models.users_db import User
+from app.models.users_db import User, UserPasswordModel
 
 router = APIRouter(tags=["users mub"])
-
-
-class UserPasswordModel(User.InputModel):
-    password: Annotated[str, AfterValidator(User.generate_hash)]
 
 
 @router.post("/", response_model=User.FullModel)
