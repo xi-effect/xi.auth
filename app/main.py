@@ -14,6 +14,7 @@ from app.common.config import (
     sessionmaker,
 )
 from app.common.sqla import session_context
+from app.routes import users_mub
 
 
 @asynccontextmanager
@@ -29,6 +30,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(lifespan=lifespan)
+app.include_router(users_mub.router, prefix="/mub/users")
 
 
 @app.middleware("http")

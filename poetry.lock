@@ -1498,6 +1498,25 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
+name = "pydantic-marshals"
+version = "0.3.3"
+description = "Library for creating partial pydantic models (automatic converters) from different mappings"
+category = "main"
+optional = false
+python-versions = ">=3.10,<4.0"
+files = [
+    {file = "pydantic_marshals-0.3.3-py3-none-any.whl", hash = "sha256:b08015c77abddafc9cf67a2fd82d2ce40492022b3b5ab16aebffcad1a7ed26a9"},
+    {file = "pydantic_marshals-0.3.3.tar.gz", hash = "sha256:c2ce6d0a3d5ef1fd533157eca461263102372cdf91595e0482c33efeb2139194"},
+]
+
+[package.dependencies]
+pydantic = ">=2.0,<3.0"
+sqlalchemy = {version = ">=2.0,<3.0", optional = true, markers = "extra == \"sqlalchemy\""}
+
+[package.extras]
+sqlalchemy = ["sqlalchemy (>=2.0,<3.0)"]
+
+[[package]]
 name = "pydocstyle"
 version = "6.3.0"
 description = "Python docstring style checker"
@@ -1827,6 +1846,18 @@ files = [
 pbr = ">=2.0.0,<2.1.0 || >2.1.0"
 
 [[package]]
+name = "types-passlib"
+version = "1.7.7.13"
+description = "Typing stubs for passlib"
+category = "dev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "types-passlib-1.7.7.13.tar.gz", hash = "sha256:f152639f1f2103d7f59a56e2aec5f9398a75a80830991d0d68aac5c2b9c32a77"},
+    {file = "types_passlib-1.7.7.13-py3-none-any.whl", hash = "sha256:414b5ee9c88313357c9261cfcf816509b1e8e4673f0796bd61e9ef249f6fe076"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.7.1"
 description = "Backported and Experimental Type Hints for Python 3.7+"
@@ -2081,4 +2112,4 @@ typing_extensions = ">=4.0,<5.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "8a1aed02e48d79c9405ee102b0b2c97cad108b51706e121e0c8700a6b968dbac"
+content-hash = "e263aa787174920779e049a888b731b41f18bda07ba19a38398fccd37e82d8ff"

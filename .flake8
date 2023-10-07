@@ -19,6 +19,8 @@ extend-ignore =
 
   # black
   WPS348 C812
+  # pydantic-marshals & SQLAlchemy
+  VNE003 WPS115
   # weird
   PIE803 C101 FNE008 N812 ANN101 ANN102 WPS110 WPS111 VNE001
   # broken
