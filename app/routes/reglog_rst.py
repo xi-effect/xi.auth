@@ -1,8 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Response
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
-from app.common.responses import Responses
+from app.common.responses import Responses, SuccessResponse
+from app.models.sessions_db import Session
 from app.models.users_db import User, UserPasswordModel
+from app.utils.authorization import AUTH_HEADER, AuthorizedResponses, AuthorizedSession
 
 router = APIRouter(tags=["reglog"])
 
@@ -16,13 +18,18 @@ class SignupResponses(Responses):
     response_model=User.FullModel,
     responses=SignupResponses.responses(),
 )
-async def signup(user_data: UserPasswordModel) -> User:
+async def signup(user_data: UserPasswordModel, response: Response) -> User:
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
         raise SignupResponses.EMAIL_IN_USE.value
 
+    user = await User.create(**user_data.model_dump())
+
     # TODO send email
-    # TODO create token & add as headers
-    return await User.create(**user_data.model_dump())
+
+    session = await Session.create(user=user)
+    response.headers[AUTH_HEADER] = session.token
+
+    return user
 
 
 class SigninResponses(Responses):
@@ -35,7 +42,7 @@ class SigninResponses(Responses):
     response_model=User.FullModel,
     responses=SigninResponses.responses(),
 )
-async def signin(user_data: User.InputModel) -> User:
+async def signin(user_data: User.InputModel, response: Response) -> User:
     user = await User.find_first_by_kwargs(email=user_data.email)
     if user is None:
         raise SigninResponses.USER_NOT_FOUND.value
@@ -43,5 +50,13 @@ async def signin(user_data: User.InputModel) -> User:
     if not user.is_password_valid(user_data.password):
         raise SigninResponses.WRONG_PASSWORD.value
 
-    # TODO create token & add as headers
+    session = await Session.create(user=user)
+    response.headers[AUTH_HEADER] = session.token
+
     return user
+
+
+@router.post("/signout", responses=AuthorizedResponses.responses())
+async def signout(session: AuthorizedSession) -> SuccessResponse:
+    session.disabled = True
+    return SuccessResponse()

@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Any
 
 from fastapi import HTTPException
+from pydantic import BaseModel
 
 
 class Responses(HTTPException, Enum):
@@ -26,3 +27,7 @@ class Responses(HTTPException, Enum):
                 },
             }
         return result
+
+
+class SuccessResponse(BaseModel):
+    a: bool = True
