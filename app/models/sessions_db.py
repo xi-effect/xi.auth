@@ -1,7 +1,9 @@
+from collections.abc import Sequence
 from datetime import datetime, timedelta
 from secrets import token_urlsafe
 from typing import ClassVar, Self
 
+from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import CHAR, ForeignKey, Index, delete, select, update
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -45,6 +47,26 @@ class Session(Base):
     __table_args__ = (
         Index("hash_index_session_token", token, postgresql_using="hash", unique=True),
     )
+
+    FullModel = MappedModel.create(
+        columns=[id, created, expiry, disabled],
+        properties=[invalid],
+    )
+
+    @classmethod
+    async def find_by_user(cls, user_id: int) -> Sequence[Self]:
+        return await cls.find_all_by_kwargs(cls.expiry.desc(), user_id=user_id)
+
+    async def disable_all_other(self) -> None:
+        await db.session.execute(
+            update(type(self))
+            .where(
+                type(self).id != self.id,
+                type(self).user_id == self.user_id,
+                type(self).disabled.is_(False),
+            )
+            .values(disabled=True)
+        )
 
     @classmethod
     async def cleanup_concurrent_by_user(cls, user_id: int) -> None:
