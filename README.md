@@ -15,7 +15,7 @@
 
 ### Install
 ```sh
-pip install poetry==1.5.1
+pip install poetry==1.4.1
 poetry install
 pre-commit install
 ```
