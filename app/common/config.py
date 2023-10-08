@@ -26,6 +26,19 @@ db_meta = MetaData(naming_convention=convention)
 sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
+if db_url.startswith("sqlite"):  # pragma: no coverage
+    from typing import Any  # noqa: WPS433
+
+    from sqlalchemy import Engine, PoolProxiedConnection  # noqa: WPS433
+    from sqlalchemy.event import listens_for  # noqa: WPS433
+
+    @listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection: PoolProxiedConnection, *_: Any) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+
+
 class Base(AsyncAttrs, DeclarativeBase, MappingBase):
     __tablename__: str
     __abstract__: bool
