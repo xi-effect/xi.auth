@@ -31,6 +31,7 @@ extend-ignore =
   WPS201 WPS214 WPS221
 
   # don't block features
+  WPS100  # utils is a module name
   WPS237 WPS305  # f-strings are the best
   WPS306  # python 2.x is deprecated
   WPS420  # pass is a thing

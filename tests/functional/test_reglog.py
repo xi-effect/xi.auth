@@ -1,13 +1,13 @@
 from typing import Any
 
 import pytest
-from pydantic_marshals.contains import assert_contains
 from starlette.testclient import TestClient
 
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_HEADER
 from tests.conftest import ActiveSession
+from tests.utils import assert_response
 
 
 async def assert_session(xi_id_header: str, invalid: bool = False) -> None:
@@ -22,10 +22,11 @@ async def test_signup(
     active_session: ActiveSession,
     user_data: dict[str, Any],
 ) -> None:
-    response = client.post("/api/signup", json=user_data)
-    assert response.status_code == 200
-    assert_contains(response.json(), {**user_data, "id": int, "password": None})
-    assert_contains(response.headers, {AUTH_HEADER: str})
+    response = assert_response(
+        client.post("/api/signup", json=user_data),
+        expected_json={**user_data, "id": int, "password": None},
+        expected_headers={AUTH_HEADER: str},
+    )
 
     async with active_session():
         await assert_session(response.headers[AUTH_HEADER])
@@ -42,10 +43,11 @@ async def test_signin(
     user_data: dict[str, Any],
     user: User,
 ) -> None:
-    response = client.post("/api/signin", json=user_data)
-    assert response.status_code == 200, (response.json(), user_data)
-    assert_contains(response.json(), {**user_data, "id": user.id, "password": None})
-    assert_contains(response.headers, {AUTH_HEADER: str})
+    response = assert_response(
+        client.post("/api/signin", json=user_data),
+        expected_json={**user_data, "id": user.id, "password": None},
+        expected_headers={AUTH_HEADER: str},
+    )
 
     async with active_session():
         await assert_session(response.headers[AUTH_HEADER])
@@ -57,21 +59,26 @@ async def test_signout(
     active_session: ActiveSession,
     session_token: str,
 ) -> None:
-    response = authorized_client.post("/api/signout")
-    assert response.status_code == 200
-    assert response.json() == {"a": True}
+    assert_response(
+        authorized_client.post("/api/signout"),
+        expected_json={"a": True},
+    )
 
     async with active_session():
         await assert_session(session_token, invalid=True)
 
 
 def test_no_auth_header(client: TestClient) -> None:
-    response = client.post("/api/signout")
-    assert response.status_code == 401
-    assert_contains(response.json(), {"detail": "X-XI-ID header is missing"})
+    assert_response(
+        client.post("/api/signout"),
+        expected_code=401,
+        expected_json={"detail": "X-XI-ID header is missing"},
+    )
 
 
 def test_invalid_session(client: TestClient, invalid_token: str) -> None:
-    response = client.post("/api/signout", headers={AUTH_HEADER: invalid_token})
-    assert response.status_code == 401
-    assert_contains(response.json(), {"detail": "Session is invalid"})
+    assert_response(
+        client.post("/api/signout", headers={AUTH_HEADER: invalid_token}),
+        expected_code=401,
+        expected_json={"detail": "Session is invalid"},
+    )
