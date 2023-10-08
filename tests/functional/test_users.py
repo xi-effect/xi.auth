@@ -1,4 +1,3 @@
-from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
@@ -8,11 +7,6 @@ from starlette.testclient import TestClient
 
 from app.models.users_db import User
 from tests.conftest import ActiveSession
-
-
-@pytest.fixture()
-async def user_data(faker: Faker) -> dict[str, Any]:
-    return {"email": faker.email(), "password": faker.password()}
 
 
 @pytest.mark.anyio()
@@ -27,21 +21,6 @@ async def test_creation(
     async with active_session():
         user = await User.find_first_by_id(response.json()["id"])
         assert user is not None
-        await user.delete()
-
-
-@pytest.fixture()
-async def user(
-    active_session: ActiveSession,
-    user_data: dict[str, Any],
-) -> AsyncIterator[User]:
-    user_data["password"] = User.generate_hash(user_data["password"])
-    async with active_session():
-        user = await User.create(**user_data)
-
-    yield user
-
-    async with active_session():
         await user.delete()
 
 

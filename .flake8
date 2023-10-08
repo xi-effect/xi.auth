@@ -28,7 +28,7 @@ extend-ignore =
   # broken
   PIE798 WPS226 WPS354 WPS432 WPS473 WPS507
   # to many
-  WPS214 WPS221
+  WPS201 WPS214 WPS221
 
   # don't block features
   WPS237 WPS305  # f-strings are the best

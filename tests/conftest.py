@@ -1,6 +1,6 @@
 from collections.abc import AsyncIterator, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
-from typing import Protocol
+from typing import Any, Protocol, TypeVar
 
 import pytest
 from faker import Faker
@@ -11,6 +11,9 @@ from starlette.testclient import TestClient
 from app.common.config import sessionmaker
 from app.common.sqla import session_context
 from app.main import app
+from app.models.sessions_db import Session
+from app.models.users_db import User
+from app.utils.authorization import AUTH_HEADER
 
 pytest_plugins = ("anyio",)
 
@@ -45,3 +48,68 @@ def active_session() -> ActiveSession:
 def client() -> Iterator[TestClient]:
     with TestClient(app) as client:
         yield client
+
+
+@pytest.fixture()
+async def user_data(faker: Faker) -> dict[str, Any]:
+    return {"email": faker.email(), "password": faker.password()}
+
+
+@pytest.fixture()
+async def user(
+    active_session: ActiveSession,
+    user_data: dict[str, Any],
+) -> AsyncIterator[User]:
+    user_data = {**user_data, "password": User.generate_hash(user_data["password"])}
+    async with active_session():
+        user = await User.create(**user_data)
+
+    yield user
+
+    async with active_session():
+        await user.delete()
+
+
+T = TypeVar("T", covariant=True)
+
+
+class Factory(Protocol[T]):
+    async def __call__(self, **kwargs: Any) -> T:  # noqa: U100  # bug
+        pass
+
+
+@pytest.fixture()
+async def session_factory(
+    active_session: ActiveSession, user: User
+) -> Factory[Session]:
+    async def session_factory_inner(**kwargs: Any) -> Session:
+        async with active_session():
+            return await Session.create(user_id=user.id, **kwargs)
+
+    return session_factory_inner
+
+
+@pytest.fixture()
+async def session(session_factory: Factory[Session]) -> Session:
+    return await session_factory()
+
+
+@pytest.fixture()
+def session_token(session: Session) -> str:
+    return session.token
+
+
+@pytest.fixture()
+def authorized_client(session_token: str) -> Iterator[TestClient]:
+    with TestClient(app, headers={AUTH_HEADER: session_token}) as client:
+        yield client
+
+
+@pytest.fixture()
+async def invalid_session(session_factory: Factory[Session]) -> Session:
+    return await session_factory(disabled=True)
+
+
+@pytest.fixture()
+def invalid_token(invalid_session: Session) -> str:
+    return invalid_session.token
