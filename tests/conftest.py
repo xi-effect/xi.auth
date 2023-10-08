@@ -5,6 +5,7 @@ from typing import Any, Protocol, TypeVar
 import pytest
 from faker import Faker
 from faker.providers import internet
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.testclient import TestClient
 
@@ -59,15 +60,10 @@ async def user_data(faker: Faker) -> dict[str, Any]:
 async def user(
     active_session: ActiveSession,
     user_data: dict[str, Any],
-) -> AsyncIterator[User]:
+) -> User:
     user_data = {**user_data, "password": User.generate_hash(user_data["password"])}
     async with active_session():
-        user = await User.create(**user_data)
-
-    yield user
-
-    async with active_session():
-        await user.delete()
+        return await User.create(**user_data)
 
 
 T = TypeVar("T", covariant=True)
@@ -113,3 +109,9 @@ async def invalid_session(session_factory: Factory[Session]) -> Session:
 @pytest.fixture()
 def invalid_token(invalid_session: Session) -> str:
     return invalid_session.token
+
+
+@pytest.fixture(autouse=True)
+async def _reset_database(active_session: ActiveSession) -> None:
+    async with active_session() as session:
+        await session.execute(delete(User))
