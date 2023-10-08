@@ -53,6 +53,28 @@ async def test_signin(
         await assert_session(response.headers[AUTH_HEADER])
 
 
+@pytest.mark.usefixtures("user")
+@pytest.mark.parametrize(
+    ("altered_key", "error"),
+    [
+        pytest.param("email", "User not found", id="bad_email"),
+        pytest.param("password", "Wrong password", id="wrong_password"),
+    ],
+)
+def test_signin_errors(
+    client: TestClient,
+    user_data: dict[str, Any],
+    altered_key: str,
+    error: str,
+) -> None:
+    assert_response(
+        client.post("/api/signin", json={**user_data, altered_key: "alter"}),
+        expected_code=401,
+        expected_json={"detail": error},
+        expected_headers={AUTH_HEADER: None},
+    )
+
+
 @pytest.mark.anyio()
 async def test_signout(
     authorized_client: TestClient,

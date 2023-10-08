@@ -66,6 +66,18 @@ async def user(
         return await User.create(**user_data)
 
 
+@pytest.fixture()
+async def other_user(
+    faker: Faker,
+    active_session: ActiveSession,
+) -> User:
+    async with active_session():
+        return await User.create(
+            email=faker.email(),
+            password=User.generate_hash(faker.password()),
+        )
+
+
 T = TypeVar("T", covariant=True)
 
 
@@ -98,6 +110,23 @@ def session_token(session: Session) -> str:
 @pytest.fixture()
 def authorized_client(session_token: str) -> Iterator[TestClient]:
     with TestClient(app, headers={AUTH_HEADER: session_token}) as client:
+        yield client
+
+
+@pytest.fixture()
+async def other_session(active_session: ActiveSession, other_user: User) -> Session:
+    async with active_session():
+        return await Session.create(user_id=other_user.id)
+
+
+@pytest.fixture()
+def other_session_token(other_session: Session) -> str:
+    return other_session.token
+
+
+@pytest.fixture()
+def other_client(other_session_token: str) -> Iterator[TestClient]:
+    with TestClient(app, headers={AUTH_HEADER: other_session_token}) as client:
         yield client
 
 
