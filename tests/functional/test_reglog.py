@@ -7,7 +7,7 @@ from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_HEADER
 from tests.conftest import ActiveSession
-from tests.utils import assert_response
+from tests.utils import assert_nodata_response, assert_response
 
 
 async def assert_session(xi_id_header: str, invalid: bool = False) -> None:
@@ -81,10 +81,7 @@ async def test_signout(
     active_session: ActiveSession,
     session_token: str,
 ) -> None:
-    assert_response(
-        authorized_client.post("/api/signout"),
-        expected_json={"a": True},
-    )
+    assert_nodata_response(authorized_client.post("/api/signout"))
 
     async with active_session():
         await assert_session(session_token, invalid=True)

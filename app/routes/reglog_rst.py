@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Response
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
-from app.common.responses import Responses, SuccessResponse
+from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User, UserPasswordModel
 from app.utils.authorization import AUTH_HEADER, AuthorizedResponses, AuthorizedSession
@@ -57,7 +57,6 @@ async def signin(user_data: User.InputModel, response: Response) -> User:
     return user
 
 
-@router.post("/signout", responses=AuthorizedResponses.responses())
-async def signout(session: AuthorizedSession) -> SuccessResponse:
+@router.post("/signout", responses=AuthorizedResponses.responses(), status_code=204)
+async def signout(session: AuthorizedSession) -> None:
     session.disabled = True
-    return SuccessResponse()

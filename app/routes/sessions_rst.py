@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from fastapi import APIRouter
 from starlette.status import HTTP_404_NOT_FOUND
 
-from app.common.responses import Responses, SuccessResponse
+from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.utils.authorization import (
     AuthorizedResponses,
@@ -35,10 +35,9 @@ async def list_sessions(
     return await Session.find_by_user(user.id, exclude_id=session.id)
 
 
-@router.delete("/", responses=AuthorizedResponses.responses())
-async def disable_all_but_current(session: AuthorizedSession) -> SuccessResponse:
+@router.delete("/", responses=AuthorizedResponses.responses(), status_code=204)
+async def disable_all_but_current(session: AuthorizedSession) -> None:
     await session.disable_all_other()
-    return SuccessResponse()
 
 
 @include_responses(AuthorizedResponses)
@@ -46,10 +45,9 @@ class SessionResponses(Responses):
     SESSION_NOT_FOUND = (HTTP_404_NOT_FOUND, Session.not_found_text)
 
 
-@router.delete("/{session_id}", responses=SessionResponses.responses())
-async def disable_session(session_id: int, user: AuthorizedUser) -> SuccessResponse:
+@router.delete("/{session_id}", responses=SessionResponses.responses(), status_code=204)
+async def disable_session(session_id: int, user: AuthorizedUser) -> None:
     session = await Session.find_first_by_kwargs(id=session_id, user_id=user.id)
     if session is None:
         raise SessionResponses.SESSION_NOT_FOUND.value
     session.disabled = True
-    return SuccessResponse()
