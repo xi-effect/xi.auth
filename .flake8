@@ -27,8 +27,10 @@ extend-ignore =
   PIE803 C101 FNE008 N812 ANN101 ANN102 WPS110 WPS111 VNE001 CM001
   # broken
   PIE798 WPS226 WPS354 WPS432 WPS473 WPS507
+  U100  # fails to understand `raise NotImplementedError` and overloading
+  WPS428  # fails to understand overloading
   # to many
-  WPS201 WPS214 WPS221
+  WPS201 WPS210 WPS214 WPS217 WPS218 WPS221
 
   # don't block features
   WPS100  # utils is a module name
@@ -36,6 +38,7 @@ extend-ignore =
   WPS306  # python 2.x is deprecated
   WPS420  # pass is a thing
   WPS430  # nested functions
+  WPS451  # positional-only arguments
   WPS501  # try-finally with no except
   WPS600  # subclassing lowercase builtins
   WPS602  # @staticmethod
