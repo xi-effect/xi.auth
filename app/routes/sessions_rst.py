@@ -16,12 +16,23 @@ router = APIRouter(tags=["user sessions"])
 
 
 @router.get(
+    "/current",
+    response_model=Session.FullModel,
+    responses=AuthorizedResponses.responses(),
+)
+async def get_current_session(session: AuthorizedSession) -> Session:
+    return session
+
+
+@router.get(
     "/",
     response_model=list[Session.FullModel],
     responses=AuthorizedResponses.responses(),
 )
-async def list_sessions(user: AuthorizedUser) -> Sequence[Session]:
-    return await Session.find_by_user(user.id)
+async def list_sessions(
+    user: AuthorizedUser, session: AuthorizedSession
+) -> Sequence[Session]:
+    return await Session.find_by_user(user.id, exclude_id=session.id)
 
 
 @router.delete("/", responses=AuthorizedResponses.responses())

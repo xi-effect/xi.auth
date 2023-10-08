@@ -54,8 +54,15 @@ class Session(Base):
     )
 
     @classmethod
-    async def find_by_user(cls, user_id: int) -> Sequence[Self]:
-        return await cls.find_all_by_kwargs(cls.expiry.desc(), user_id=user_id)
+    async def find_by_user(
+        cls,
+        user_id: int,
+        exclude_id: int | None = None,
+    ) -> Sequence[Self]:
+        stmt = select(cls).filter_by(user_id=user_id).order_by(cls.expiry.desc())
+        if exclude_id is not None:
+            stmt = stmt.filter(cls.id != exclude_id)
+        return await db.get_all(stmt)
 
     async def disable_all_other(self) -> None:
         await db.session.execute(
