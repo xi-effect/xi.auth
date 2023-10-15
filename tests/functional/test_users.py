@@ -6,7 +6,7 @@ from starlette.testclient import TestClient
 
 from app.models.users_db import User
 from tests.conftest import ActiveSession
-from tests.utils import assert_response
+from tests.utils import assert_nodata_response, assert_response
 
 
 @pytest.mark.anyio()
@@ -55,3 +55,7 @@ def test_updating(
         client.put(f"/mub/users/{user.id}", json=new_user_data),
         expected_json={**user_data, **new_user_data, "id": user.id, "password": None},
     )
+
+
+def test_deleting(client: TestClient, user: User) -> None:
+    assert_nodata_response(client.delete(f"/mub/users/{user.id}"))
