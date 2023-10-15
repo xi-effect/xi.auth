@@ -1,17 +1,17 @@
-from collections.abc import AsyncIterator, Iterator
+from collections.abc import AsyncIterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol, TypeVar
 
 import pytest
 from faker import Faker
 from faker.providers import internet
+from fastapi.testclient import TestClient
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
-from starlette.testclient import TestClient
 
 from app.common.config import sessionmaker
 from app.common.sqla import session_context
-from app.main import app
+from app.main import app, lifespan
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_HEADER
@@ -45,10 +45,22 @@ def active_session() -> ActiveSession:
     return active_session_inner
 
 
+@pytest.fixture(autouse=True)
+async def _activate_lifespan() -> AsyncIterator[None]:
+    async with lifespan(app):
+        yield
+
+
+@pytest.fixture(autouse=True)
+async def _reset_database(active_session: ActiveSession) -> AsyncIterator[None]:
+    async with active_session() as session:
+        yield
+        await session.execute(delete(User))
+
+
 @pytest.fixture()
-def client() -> Iterator[TestClient]:
-    with TestClient(app) as client:
-        yield client
+def client() -> TestClient:
+    return TestClient(app)
 
 
 @pytest.fixture()
@@ -108,9 +120,8 @@ def session_token(session: Session) -> str:
 
 
 @pytest.fixture()
-def authorized_client(session_token: str) -> Iterator[TestClient]:
-    with TestClient(app, headers={AUTH_HEADER: session_token}) as client:
-        yield client
+def authorized_client(session_token: str) -> TestClient:
+    return TestClient(app, headers={AUTH_HEADER: session_token})
 
 
 @pytest.fixture()
@@ -125,9 +136,8 @@ def other_session_token(other_session: Session) -> str:
 
 
 @pytest.fixture()
-def other_client(other_session_token: str) -> Iterator[TestClient]:
-    with TestClient(app, headers={AUTH_HEADER: other_session_token}) as client:
-        yield client
+def other_client(other_session_token: str) -> TestClient:
+    return TestClient(app, headers={AUTH_HEADER: other_session_token})
 
 
 @pytest.fixture()
@@ -138,9 +148,3 @@ async def invalid_session(session_factory: Factory[Session]) -> Session:
 @pytest.fixture()
 def invalid_token(invalid_session: Session) -> str:
     return invalid_session.token
-
-
-@pytest.fixture(autouse=True)
-async def _reset_database(active_session: ActiveSession) -> None:
-    async with active_session() as session:
-        await session.execute(delete(User))
