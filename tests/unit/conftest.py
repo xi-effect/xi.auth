@@ -7,6 +7,10 @@ import pytest
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
 
+class TestException(Exception):
+    pass
+
+
 class MockStack(ExitStack):
     @overload
     def enter_mock(

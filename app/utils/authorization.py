@@ -1,6 +1,7 @@
+from collections.abc import AsyncIterator
 from typing import Annotated, Final
 
-from fastapi import Depends
+from fastapi import Depends, Response
 from fastapi.security import APIKeyHeader
 from starlette.status import HTTP_401_UNAUTHORIZED
 
@@ -37,9 +38,15 @@ async def authorize_session(
 AuthorizedSession = Annotated[Session, Depends(authorize_session)]
 
 
-async def authorize_user(session: AuthorizedSession) -> User:
-    session.expiry = session.generate_expiry()
-    return await session.awaitable_attrs.user  # type: ignore[no-any-return]
+async def authorize_user(
+    session: AuthorizedSession,
+    response: Response,
+) -> AsyncIterator[User]:
+    yield await session.awaitable_attrs.user
+
+    if session.is_renewal_required():
+        session.renew()
+        response.headers[AUTH_HEADER] = session.token
 
 
 AuthorizedUser = Annotated[User, Depends(authorize_user)]

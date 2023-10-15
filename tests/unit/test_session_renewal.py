@@ -1,0 +1,89 @@
+from contextlib import asynccontextmanager, suppress
+from datetime import timedelta
+from typing import Final
+
+import pytest
+from fastapi import Response
+from freezegun import freeze_time
+
+from app.models.sessions_db import Session
+from app.models.users_db import User
+from app.utils.authorization import AUTH_HEADER, authorize_user
+from tests.conftest import ActiveSession
+from tests.unit.conftest import MockStack, TestException
+
+days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_length).days
+
+
+@pytest.mark.parametrize(
+    ("active_for", "expected"),
+    [
+        pytest.param(days, days > days_to_renew)
+        for days in range(Session.expiry_timeout.days)
+    ],
+)
+def test_renewal_required_detection(
+    session: Session,
+    mock_stack: MockStack,
+    active_for: int,
+    expected: bool,
+) -> None:
+    with freeze_time(session.created + timedelta(days=active_for)):
+        assert session.is_renewal_required() == expected
+
+
+@pytest.mark.anyio()
+async def test_renewal_method(
+    mock_stack: MockStack,
+    active_session: ActiveSession,
+    session: Session,
+    session_token: str,
+) -> None:
+    old_expiry = session.expiry
+    async with active_session():
+        session.renew()
+    assert session.token != session_token
+    assert session.expiry > old_expiry
+
+
+@pytest.mark.anyio()
+async def test_automatic_renewal(
+    mock_stack: MockStack,
+    active_session: ActiveSession,
+    user: User,
+) -> None:
+    session_is_renewal_required = mock_stack.enter_mock(
+        Session, "is_renewal_required", return_value=True
+    )
+    session_renew_mock = mock_stack.enter_mock(Session, "renew")
+    response = Response()
+
+    async with active_session():
+        session = await Session.create(user_id=user.id)
+        async with asynccontextmanager(authorize_user)(  # noqa: WPS328
+            session, response
+        ):
+            pass
+
+    assert response.headers.get(AUTH_HEADER) == session.token
+    session_is_renewal_required.assert_called_once_with()
+    session_renew_mock.assert_called_once_with()
+
+
+@pytest.mark.anyio()
+async def test_no_renewal_on_error(
+    mock_stack: MockStack,
+    active_session: ActiveSession,
+    user: User,
+) -> None:
+    session_is_renewal_required = mock_stack.enter_mock(Session, "is_renewal_required")
+    response = Response()
+
+    async with active_session():
+        session = await Session.create(user_id=user.id)
+        with suppress(TestException):
+            async with asynccontextmanager(authorize_user)(session, response):
+                raise TestException
+
+    assert response.headers.get(AUTH_HEADER) is None
+    session_is_renewal_required.assert_not_called()
