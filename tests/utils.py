@@ -1,3 +1,5 @@
+from typing import Generic, TypeVar
+
 from httpx import Response
 from pydantic_marshals.contains import TypeChecker, assert_contains
 
@@ -45,3 +47,12 @@ def assert_response(
         },
     )
     return response
+
+
+T = TypeVar("T")
+
+
+class PytestRequest(Generic[T]):
+    @property
+    def param(self) -> T:
+        raise NotImplementedError
