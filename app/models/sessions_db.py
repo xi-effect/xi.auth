@@ -50,6 +50,7 @@ class Session(Base):
 
     # User info
     created: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    cross_site: Mapped[bool] = mapped_column(default=False)
 
     __table_args__ = (
         Index("hash_index_session_token", token, postgresql_using="hash", unique=True),

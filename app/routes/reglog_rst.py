@@ -7,6 +7,7 @@ from app.models.users_db import User, UserPasswordModel
 from app.utils.authorization import (
     AuthorizedResponses,
     AuthorizedSession,
+    CrossSiteMode,
     add_session_to_response,
     remove_session_from_response,
 )
@@ -23,7 +24,9 @@ class SignupResponses(Responses):
     response_model=User.FullModel,
     responses=SignupResponses.responses(),
 )
-async def signup(user_data: UserPasswordModel, response: Response) -> User:
+async def signup(
+    user_data: UserPasswordModel, cross_site: CrossSiteMode, response: Response
+) -> User:
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
         raise SignupResponses.EMAIL_IN_USE.value
 
@@ -31,7 +34,7 @@ async def signup(user_data: UserPasswordModel, response: Response) -> User:
 
     # TODO send email
 
-    session = await Session.create(user=user)
+    session = await Session.create(user=user, cross_site=cross_site)
     add_session_to_response(response, session)
 
     return user
@@ -47,7 +50,9 @@ class SigninResponses(Responses):
     response_model=User.FullModel,
     responses=SigninResponses.responses(),
 )
-async def signin(user_data: User.InputModel, response: Response) -> User:
+async def signin(
+    user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
+) -> User:
     user = await User.find_first_by_kwargs(email=user_data.email)
     if user is None:
         raise SigninResponses.USER_NOT_FOUND.value
@@ -55,7 +60,7 @@ async def signin(user_data: User.InputModel, response: Response) -> User:
     if not user.is_password_valid(user_data.password):
         raise SigninResponses.WRONG_PASSWORD.value
 
-    session = await Session.create(user=user)
+    session = await Session.create(user=user, cross_site=cross_site)
     add_session_to_response(response, session)
     await Session.cleanup_by_user(user.id)
 

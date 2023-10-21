@@ -12,6 +12,7 @@ from app.models.sessions_db import Session
 from app.models.users_db import User
 
 AUTH_HEADER: Final[str] = "X-XI-ID"
+TEST_HEADER: Final[str] = "X-Testing"
 AUTH_COOKIE: Final[str] = "xi_id_token"
 
 
@@ -21,20 +22,14 @@ def add_session_to_response(response: Response, session: Session) -> None:
         session.token,
         expires=session.expiry.astimezone(timezone.utc),
         domain=COOKIE_DOMAIN,
-        samesite="strict",
+        samesite="none" if session.cross_site else "strict",
         httponly=True,
         secure=True,
     )
 
 
 def remove_session_from_response(response: Response) -> None:
-    response.delete_cookie(
-        AUTH_COOKIE,
-        domain=COOKIE_DOMAIN,
-        samesite="strict",
-        httponly=True,
-        secure=True,
-    )
+    response.delete_cookie(AUTH_COOKIE, domain=COOKIE_DOMAIN)
 
 
 class AuthorizedResponses(Responses):
@@ -58,6 +53,13 @@ async def authorize_session(
 
 
 AuthorizedSession = Annotated[Session, Depends(authorize_session)]
+
+
+def is_cross_site_mode(testing: Annotated[str, Header(alias=TEST_HEADER)] = "") -> bool:
+    return testing == "true"
+
+
+CrossSiteMode = Annotated[bool, Depends(is_cross_site_mode)]
 
 
 async def authorize_user(

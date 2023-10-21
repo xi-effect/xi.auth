@@ -14,7 +14,7 @@ from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_COOKIE, AUTH_HEADER
 from tests.conftest import ActiveSession
-from tests.utils import assert_nodata_response, assert_response
+from tests.utils import PytestRequest, assert_nodata_response, assert_response
 
 
 async def assert_session(token: str, invalid: bool = False) -> Session:
@@ -24,12 +24,17 @@ async def assert_session(token: str, invalid: bool = False) -> Session:
     return session
 
 
-async def assert_session_cookie(response: httpx.Response | responses.Response) -> None:
+async def assert_session_cookie(
+    response: httpx.Response | responses.Response, cross_site: bool = False
+) -> None:
     cookie_parts: list[str] = [
         part.strip()
         for part in response.headers["Set-Cookie"].partition("=")[2].split(";")
     ]
+
     session = await assert_session(cookie_parts[0])
+    assert session.cross_site == cross_site
+
     expires = format_datetime(session.expiry.astimezone(timezone.utc), usegmt=True)
     assert_contains(
         [part.lower() for part in cookie_parts[1:]],
@@ -37,7 +42,7 @@ async def assert_session_cookie(response: httpx.Response | responses.Response) -
             {
                 f"domain={COOKIE_DOMAIN}",
                 f"expires={expires.lower()}",
-                "samesite=strict",
+                "samesite=none" if cross_site else "samesite=strict",
                 "path=/",
                 "httponly",
                 "secure",
@@ -49,20 +54,27 @@ async def assert_session_cookie(response: httpx.Response | responses.Response) -
 COOKIE_REGEX = f"{AUTH_COOKIE}=(.*)"
 
 
+@pytest.fixture(params=[False, True], ids=["same_site", "cross_site"])
+def is_cross_site(request: PytestRequest[bool]) -> bool:
+    return request.param
+
+
 @pytest.mark.anyio()
 async def test_signup(
     client: TestClient,
     active_session: ActiveSession,
     user_data: dict[str, Any],
+    is_cross_site: bool,
 ) -> None:
+    headers = {"X-Testing": "true"} if is_cross_site else {}
     response = assert_response(
-        client.post("/api/signup", json=user_data),
+        client.post("/api/signup", json=user_data, headers=headers),
         expected_json={**user_data, "id": int, "password": None},
         expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
     )
 
     async with active_session():
-        await assert_session_cookie(response)
+        await assert_session_cookie(response, cross_site=is_cross_site)
 
         user = await User.find_first_by_id(response.json()["id"])
         assert user is not None
@@ -75,15 +87,17 @@ async def test_signin(
     active_session: ActiveSession,
     user_data: dict[str, Any],
     user: User,
+    is_cross_site: bool,
 ) -> None:
+    headers = {"X-Testing": "true"} if is_cross_site else {}
     response = assert_response(
-        client.post("/api/signin", json=user_data),
+        client.post("/api/signin", json=user_data, headers=headers),
         expected_json={**user_data, "id": user.id, "password": None},
         expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
     )
 
     async with active_session():
-        await assert_session_cookie(response)
+        await assert_session_cookie(response, cross_site=is_cross_site)
 
 
 @pytest.mark.usefixtures("user")
