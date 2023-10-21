@@ -4,7 +4,12 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User, UserPasswordModel
-from app.utils.authorization import AUTH_HEADER, AuthorizedResponses, AuthorizedSession
+from app.utils.authorization import (
+    AuthorizedResponses,
+    AuthorizedSession,
+    add_session_to_response,
+    remove_session_from_response,
+)
 
 router = APIRouter(tags=["reglog"])
 
@@ -27,7 +32,7 @@ async def signup(user_data: UserPasswordModel, response: Response) -> User:
     # TODO send email
 
     session = await Session.create(user=user)
-    response.headers[AUTH_HEADER] = session.token
+    add_session_to_response(response, session)
 
     return user
 
@@ -51,12 +56,13 @@ async def signin(user_data: User.InputModel, response: Response) -> User:
         raise SigninResponses.WRONG_PASSWORD.value
 
     session = await Session.create(user=user)
-    response.headers[AUTH_HEADER] = session.token
+    add_session_to_response(response, session)
     await Session.cleanup_by_user(user.id)
 
     return user
 
 
 @router.post("/signout", responses=AuthorizedResponses.responses(), status_code=204)
-async def signout(session: AuthorizedSession) -> None:
+async def signout(session: AuthorizedSession, response: Response) -> None:
     session.disabled = True
+    remove_session_from_response(response)

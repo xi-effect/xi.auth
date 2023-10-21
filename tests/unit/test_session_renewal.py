@@ -8,8 +8,9 @@ from freezegun import freeze_time
 
 from app.models.sessions_db import Session
 from app.models.users_db import User
-from app.utils.authorization import AUTH_HEADER, authorize_user
+from app.utils.authorization import authorize_user
 from tests.conftest import ActiveSession
+from tests.functional.test_reglog import assert_session_cookie
 from tests.unit.conftest import MockStack, TestException
 
 days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_length).days
@@ -65,7 +66,9 @@ async def test_automatic_renewal(
         ):
             pass
 
-    assert response.headers.get(AUTH_HEADER) == session.token
+    async with active_session():
+        await assert_session_cookie(response)
+
     session_is_renewal_required.assert_called_once_with()
     session_renew_mock.assert_called_once_with()
 
@@ -85,5 +88,5 @@ async def test_no_renewal_on_error(
             async with asynccontextmanager(authorize_user)(session, response):
                 raise TestException
 
-    assert response.headers.get(AUTH_HEADER) is None
+    assert response.headers.get("Set-Cookie") is None
     session_is_renewal_required.assert_not_called()

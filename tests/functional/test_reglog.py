@@ -1,19 +1,52 @@
+from datetime import timezone
+from email.utils import format_datetime
 from typing import Any
 
+import httpx
 import pytest
+from pydantic import constr
+from pydantic_marshals.contains import UnorderedLiteralCollection, assert_contains
+from starlette import responses
 from starlette.testclient import TestClient
 
+from app.common.config import COOKIE_DOMAIN
 from app.models.sessions_db import Session
 from app.models.users_db import User
-from app.utils.authorization import AUTH_HEADER
+from app.utils.authorization import AUTH_COOKIE, AUTH_HEADER
 from tests.conftest import ActiveSession
 from tests.utils import assert_nodata_response, assert_response
 
 
-async def assert_session(xi_id_header: str, invalid: bool = False) -> None:
-    session = await Session.find_first_by_kwargs(token=xi_id_header)
+async def assert_session(token: str, invalid: bool = False) -> Session:
+    session = await Session.find_first_by_kwargs(token=token)
     assert session is not None
     assert session.invalid == invalid
+    return session
+
+
+async def assert_session_cookie(response: httpx.Response | responses.Response) -> None:
+    cookie_parts: list[str] = [
+        part.strip()
+        for part in response.headers["Set-Cookie"].partition("=")[2].split(";")
+    ]
+    session = await assert_session(cookie_parts[0])
+    expires = format_datetime(session.expiry.astimezone(timezone.utc), usegmt=True)
+    assert_contains(
+        [part.lower() for part in cookie_parts[1:]],
+        UnorderedLiteralCollection(
+            {
+                f"domain={COOKIE_DOMAIN}",
+                f"expires={expires.lower()}",
+                "samesite=strict",
+                "path=/",
+                "httponly",
+                "secure",
+            }
+        ),
+    )
+
+
+COOKIE_REGEX = f"{AUTH_COOKIE}=(.*)"
 
 
 @pytest.mark.anyio()
@@ -25,11 +58,11 @@ async def test_signup(
     response = assert_response(
         client.post("/api/signup", json=user_data),
         expected_json={**user_data, "id": int, "password": None},
-        expected_headers={AUTH_HEADER: str},
+        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
     )
 
     async with active_session():
-        await assert_session(response.headers[AUTH_HEADER])
+        await assert_session_cookie(response)
 
         user = await User.find_first_by_id(response.json()["id"])
         assert user is not None
@@ -46,11 +79,11 @@ async def test_signin(
     response = assert_response(
         client.post("/api/signin", json=user_data),
         expected_json={**user_data, "id": user.id, "password": None},
-        expected_headers={AUTH_HEADER: str},
+        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
     )
 
     async with active_session():
-        await assert_session(response.headers[AUTH_HEADER])
+        await assert_session_cookie(response)
 
 
 @pytest.mark.usefixtures("user")
@@ -71,7 +104,7 @@ def test_signin_errors(
         client.post("/api/signin", json={**user_data, altered_key: "alter"}),
         expected_code=401,
         expected_json={"detail": error},
-        expected_headers={AUTH_HEADER: None},
+        expected_headers={"Set-Cookie": None},
     )
 
 
@@ -91,13 +124,17 @@ def test_no_auth_header(client: TestClient) -> None:
     assert_response(
         client.post("/api/signout"),
         expected_code=401,
-        expected_json={"detail": "X-XI-ID header is missing"},
+        expected_json={"detail": "Authorization cookie is missing"},
     )
 
 
-def test_invalid_session(client: TestClient, invalid_token: str) -> None:
+def test_invalid_session(
+    client: TestClient, invalid_token: str, use_cookie_auth: bool
+) -> None:
+    cookies = {AUTH_COOKIE: invalid_token} if use_cookie_auth else {}
+    headers = {} if use_cookie_auth else {AUTH_HEADER: invalid_token}
     assert_response(
-        client.post("/api/signout", headers={AUTH_HEADER: invalid_token}),
+        client.post("/api/signout", cookies=cookies, headers=headers),
         expected_code=401,
         expected_json={"detail": "Session is invalid"},
     )

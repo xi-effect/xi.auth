@@ -3,7 +3,7 @@ from pydantic_marshals.contains import TypeChecker
 from starlette.testclient import TestClient
 
 from app.models.sessions_db import Session
-from app.utils.authorization import AUTH_HEADER
+from app.utils.authorization import AUTH_COOKIE
 from tests.conftest import ActiveSession, Factory
 from tests.utils import assert_nodata_response, assert_response
 
@@ -92,7 +92,7 @@ def test_non_existent_session_fails(
 @pytest.mark.parametrize(
     ("use_headers", "error"),
     [
-        pytest.param(False, "X-XI-ID header is missing", id="missing_header"),
+        pytest.param(False, "Authorization cookie is missing", id="missing_header"),
         pytest.param(True, "Session is invalid", id="invalid_session"),
     ],
 )
@@ -114,9 +114,9 @@ def test_authorization_fails(
     method: str,
     path: str,
 ) -> None:
-    headers = {AUTH_HEADER: invalid_token} if use_headers else {}
+    cookies = {AUTH_COOKIE: invalid_token} if use_headers else {}
     assert_response(
-        client.request(method, path.format(session_id=session.id), headers=headers),
+        client.request(method, path.format(session_id=session.id), cookies=cookies),
         expected_code=401,
         expected_json={"detail": error},
     )

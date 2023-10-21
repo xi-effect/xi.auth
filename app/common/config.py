@@ -9,6 +9,7 @@ from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
 
+COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
 DATABASE_RESET: bool = getenv("DATABASE_RESET", "0") == "1"
 
