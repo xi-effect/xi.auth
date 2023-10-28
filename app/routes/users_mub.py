@@ -40,3 +40,15 @@ async def update_user(user_id: int, user_data: User.PatchModel) -> User:
 
     user.update(**user_data.model_dump(exclude_defaults=True))
     return user
+
+
+@router.delete(
+    "/{user_id}",
+    status_code=204,
+    responses=UserResponses.responses(),
+)
+async def delete_user(user_id: int) -> None:
+    user = await User.find_first_by_id(user_id)
+    if user is None:
+        raise UserResponses.USER_NOT_FOUND.value
+    await user.delete()

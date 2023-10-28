@@ -9,6 +9,7 @@ from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
 
+COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
 DATABASE_RESET: bool = getenv("DATABASE_RESET", "0") == "1"
 
@@ -24,6 +25,19 @@ db_url: str = getenv("DB_LINK", f"sqlite+aiosqlite:///{current_directory / 'app.
 engine = create_async_engine(db_url, pool_recycle=280, echo=True)  # noqa: WPS432
 db_meta = MetaData(naming_convention=convention)
 sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False)
+
+
+if db_url.startswith("sqlite"):  # pragma: no coverage
+    from typing import Any  # noqa: WPS433
+
+    from sqlalchemy import Engine, PoolProxiedConnection  # noqa: WPS433
+    from sqlalchemy.event import listens_for  # noqa: WPS433
+
+    @listens_for(Engine, "connect")
+    def set_sqlite_pragma(dbapi_connection: PoolProxiedConnection, *_: Any) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 class Base(AsyncAttrs, DeclarativeBase, MappingBase):

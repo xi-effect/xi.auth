@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from contextvars import ContextVar
 from typing import Any, Self, TypeVar
 
-from sqlalchemy import Result, Select, select
+from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 session_context: ContextVar[AsyncSession | None] = ContextVar("session", default=None)
@@ -21,17 +21,15 @@ class DBController:
             raise ValueError("Session not initialized")
         return session
 
-    async def get_first(self, stmt: Select[tuple[t]]) -> t | None:
-        result: Result[tuple[t]] = await self.session.execute(stmt)
-        return result.scalars().first()
+    async def get_first(self, stmt: Select[Any]) -> Any | None:
+        return (await self.session.execute(stmt)).scalars().first()
 
-    async def get_all(self, stmt: Select[tuple[t]]) -> Sequence[t]:
-        result: Result[tuple[t]] = await self.session.execute(stmt)
-        return result.scalars().all()
+    async def get_all(self, stmt: Select[Any]) -> Sequence[Any]:
+        return (await self.session.execute(stmt)).scalars().all()
 
     async def get_paginated(
-        self, stmt: Select[tuple[t]], offset: int, limit: int
-    ) -> Sequence[t]:
+        self, stmt: Select[Any], offset: int, limit: int
+    ) -> Sequence[Any]:
         return await self.get_all(stmt.offset(offset).limit(limit))
 
 
@@ -58,9 +56,7 @@ class MappingBase:
 
     @classmethod
     async def find_first_by_kwargs(cls, *order_by: Any, **kwargs: Any) -> Self | None:
-        return await db.get_first(
-            cls.select_by_kwargs(*order_by, **kwargs)  # type: ignore[arg-type]  # bug
-        )
+        return await db.get_first(cls.select_by_kwargs(*order_by, **kwargs))
 
     @classmethod
     async def find_all_by_kwargs(cls, *order_by: Any, **kwargs: Any) -> Sequence[Self]:

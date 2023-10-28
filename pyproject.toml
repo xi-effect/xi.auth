@@ -12,6 +12,7 @@ uvicorn = {extras = ["standard"], version = "^0.22.0"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.18"}
 psycopg2-binary = "^2.9.6"
 pydantic-marshals = {version = "0.3.5", extras = ["sqlalchemy"]}
+aenum = "^3.1.15"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"
@@ -45,6 +46,7 @@ types-passlib = "^1.7.7.13"
 pydantic-marshals = {extras = ["assert-contains"], version = "^0.3.5"}
 faker = "^19.6.2"
 httpx = "^0.25.0"
+freezegun = "^1.2.2"
 
 [tool.isort]
 profile = "black"
