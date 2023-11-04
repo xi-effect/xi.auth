@@ -10,9 +10,10 @@ python = "^3.11"
 fastapi = "^0.100.0"
 uvicorn = {extras = ["standard"], version = "^0.22.0"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.18"}
-psycopg2-binary = "^2.9.6"
+asyncpg = "^0.28.0"
 pydantic-marshals = {version = "0.3.5", extras = ["sqlalchemy"]}
 aenum = "^3.1.15"
+passlib = "^1.7.4"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"

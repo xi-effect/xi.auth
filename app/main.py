@@ -7,9 +7,9 @@ from starlette.responses import Response
 
 from app.common.config import (
     DATABASE_RESET,
+    DB_URL,
     PRODUCTION_MODE,
     Base,
-    db_url,
     engine,
     sessionmaker,
 )
@@ -21,9 +21,9 @@ from app.routes import reglog_rst, sessions_mub, sessions_rst, users_mub, users_
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     if not PRODUCTION_MODE:
         async with engine.begin() as conn:
-            if db_url.endswith("app.db") or DATABASE_RESET:
+            if DB_URL.endswith("app.db") or DATABASE_RESET:
                 await conn.run_sync(Base.metadata.drop_all)
-            if not db_url.startswith("postgresql") or DATABASE_RESET:
+            if not DB_URL.startswith("postgresql") or DATABASE_RESET:
                 await conn.run_sync(Base.metadata.create_all)
 
     yield

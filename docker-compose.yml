@@ -18,7 +18,7 @@ services:
     profiles:
       - app
     depends_on:
-      - mongo
+      - db
     build:
       context: .
       dockerfile: Dockerfile
@@ -32,4 +32,5 @@ services:
       - ./test:/backend/test
     environment:
       WATCHFILES_FORCE_POLLING: true
-      DB_LINK: postgresql+psycopg2://test:test@db:5432/test
+      DB_LINK: postgresql+asyncpg://test:test@db:5432/test
+      DB_SCHEMA: xi_auth
