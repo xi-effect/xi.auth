@@ -3,12 +3,15 @@ from starlette.status import HTTP_404_NOT_FOUND
 
 from app.common.responses import Responses
 from app.models.users_db import User, UserPasswordModel
+from app.routes.reglog_rst import SignupResponses
 
 router = APIRouter(tags=["users mub"])
 
 
-@router.post("/", response_model=User.FullModel)
+@router.post("/", response_model=User.FullModel, responses=SignupResponses.responses())
 async def create_user(user_data: UserPasswordModel) -> User:
+    if await User.find_first_by_kwargs(email=user_data.email) is not None:
+        raise SignupResponses.EMAIL_IN_USE.value
     return await User.create(**user_data.model_dump())
 
 
