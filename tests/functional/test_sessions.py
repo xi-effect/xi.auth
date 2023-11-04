@@ -11,8 +11,8 @@ from tests.utils import assert_nodata_response, assert_response
 def session_checker(session: Session, invalid: bool = False) -> TypeChecker:
     return {
         "id": session.id,
-        "created": session.created.isoformat().rstrip("0"),
-        "expiry": session.expiry.isoformat().rstrip("0"),
+        "created": session.created,
+        "expiry": session.expiry,
         "disabled": invalid,
         "invalid": invalid,
         "token": None,

@@ -1605,19 +1605,18 @@ typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
 name = "pydantic-marshals"
-version = "0.3.5"
+version = "0.3.6"
 description = "Library for creating partial pydantic models (automatic converters) from different mappings"
 category = "main"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "pydantic_marshals-0.3.5-py3-none-any.whl", hash = "sha256:9276a58339bbf08455cf629019bf895410f5c142faccf13a53d11d15ba119b46"},
-    {file = "pydantic_marshals-0.3.5.tar.gz", hash = "sha256:6d8e104cc2cde4df20bfe453e79185d927786c9df5e1bc5bed22e668691fd3e2"},
+    {file = "pydantic_marshals-0.3.6-py3-none-any.whl", hash = "sha256:70d35562ace43c80e621647854155a11885cd58c3cfca4cd472c6b14bd9aa785"},
+    {file = "pydantic_marshals-0.3.6.tar.gz", hash = "sha256:1035567b136563e2d52b75d0208e157ca3e4cca88403985a609a280178d337b6"},
 ]
 
 [package.dependencies]
 pydantic = ">=2.0,<3.0"
-sqlalchemy = {version = ">=2.0,<3.0", optional = true, markers = "extra == \"sqlalchemy\""}
 
 [package.extras]
 sqlalchemy = ["sqlalchemy (>=2.0,<3.0)"]
@@ -2323,4 +2322,4 @@ typing_extensions = ">=4.0,<5.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "f32fc2aa98879e5675ad9945c9bbc15c278dc1124395c819b34911a5e6f432e4"
+content-hash = "b2126c0a62916a008b8b7cc8d375a0d57383a507f892cd5929a41ff7f337d89f"
