@@ -26,6 +26,18 @@ async def test_creation(
         await user.delete()
 
 
+def test_creation_conflict(
+    client: TestClient,
+    user_data: dict[str, Any],
+    user: User,
+) -> None:
+    assert_response(
+        client.post("/mub/users", json=user_data),
+        expected_code=409,
+        expected_json={"detail": "Email already in use"},
+    )
+
+
 def test_getting(client: TestClient, user: User, user_data: dict[str, Any]) -> None:
     assert_response(
         client.get(f"/mub/users/{user.id}"),
@@ -59,3 +71,19 @@ def test_updating(
 
 def test_deleting(client: TestClient, user: User) -> None:
     assert_nodata_response(client.delete(f"/mub/users/{user.id}"))
+
+
+@pytest.mark.anyio()
+@pytest.mark.parametrize("method", ["GET", "PUT", "DELETE"])
+async def test_not_found(
+    client: TestClient, user: User, active_session: ActiveSession, method: str
+) -> None:
+    async with active_session():
+        await user.delete()
+    assert_response(
+        client.request(
+            method, f"/mub/users/{user.id}", json={} if method == "PUT" else None
+        ),
+        expected_code=404,
+        expected_json={"detail": "User not found"},
+    )

@@ -10,9 +10,11 @@ python = "^3.11"
 fastapi = "^0.100.0"
 uvicorn = {extras = ["standard"], version = "^0.22.0"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.18"}
-psycopg2-binary = "^2.9.6"
-pydantic-marshals = {version = "0.3.5", extras = ["sqlalchemy"]}
+asyncpg = "^0.28.0"
+pydantic-marshals = "0.3.6"
 aenum = "^3.1.15"
+passlib = "^1.7.4"
+alembic = "^1.12.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"
@@ -47,6 +49,8 @@ pydantic-marshals = {extras = ["assert-contains"], version = "^0.3.5"}
 faker = "^19.6.2"
 httpx = "^0.25.0"
 freezegun = "^1.2.2"
+coverage = "^7.3.2"
+pytest-cov = "^4.1.0"
 
 [tool.isort]
 profile = "black"
@@ -58,7 +62,34 @@ reverse_relative = true
 line_length = 88
 
 [tool.mypy]
+exclude = "alembic"
 plugins = "pydantic_marshals.mypy.plugin"
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+fail_under = 100
+
+exclude_lines = [
+  "pragma: no cover",
+  "if TYPE_CHECKING:",
+  "if( not)? PRODUCTION_MODE:",
+  "except ImportError",
+  "raise AssertionError",
+  "raise NotImplementedError",
+  "if __name__ == [\"']__main__[\"']:",
+  "class .*\\(Protocol\\):",
+  "@abstractmethod",
+  "@mark.skip",
+  "!wow!",
+]
+
+omit = [
+  "alembic/*",
+  "test/*",
+  "app/common/sqla.py",
+]
 
 [build-system]
 requires = ["poetry-core"]

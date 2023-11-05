@@ -2,7 +2,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TypeVar
 
-from aenum import extend_enum  # type: ignore[import]
+from aenum import extend_enum  # type: ignore[import-untyped]
 
 from app.common.responses import Responses
 

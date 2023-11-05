@@ -14,11 +14,31 @@ services:
     ports:
       - "5432:5432"
 
+  alembic:
+    profiles:
+      - migration
+    depends_on:
+      - db
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - type: bind
+        source: ./alembic
+        target: /backend/alembic
+      - type: bind
+        source: ./alembic.ini
+        target: /backend/alembic.ini
+    environment:
+      DB_LINK: postgresql+asyncpg://test:test@db:5432/test
+      DB_SCHEMA: xi_auth
+    entrypoint: sh
+
   api:
     profiles:
       - app
     depends_on:
-      - mongo
+      - db
     build:
       context: .
       dockerfile: Dockerfile
@@ -32,4 +52,5 @@ services:
       - ./test:/backend/test
     environment:
       WATCHFILES_FORCE_POLLING: true
-      DB_LINK: postgresql+psycopg2://test:test@db:5432/test
+      DB_LINK: postgresql+asyncpg://test:test@db:5432/test
+      DB_SCHEMA: xi_auth
