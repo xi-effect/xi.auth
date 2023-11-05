@@ -82,6 +82,23 @@ async def test_signup(
 
 
 @pytest.mark.anyio()
+async def test_signup_conflict(
+    client: TestClient,
+    active_session: ActiveSession,
+    user_data: dict[str, Any],
+    user: User,
+    is_cross_site: bool,
+) -> None:
+    headers = {"X-Testing": "true"} if is_cross_site else {}
+    assert_response(
+        client.post("/api/signup", json=user_data, headers=headers),
+        expected_code=409,
+        expected_json={"detail": "Email already in use"},
+        expected_headers={"Set-Cookie": None},
+    )
+
+
+@pytest.mark.anyio()
 async def test_signin(
     client: TestClient,
     active_session: ActiveSession,

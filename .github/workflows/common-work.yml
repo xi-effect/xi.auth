@@ -1,0 +1,121 @@
+name: Common Pipeline Steps
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+      base-tag:
+        type: string
+        required: false
+      database:
+        type: boolean
+        required: false
+        default: true
+      coverage:
+        type: boolean
+        required: false
+        default: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+
+    env:
+      DB_LINK: ${{ inputs.database && 'postgresql+asyncpg://test:test@localhost:5432/test' || 'sqlite+aiosqlite:///app.db' }}
+      DB_SCHEMA: ${{ inputs.database && 'xi_auth' || '' }}
+
+    services:
+      db:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+          cache: pip
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Load Cached Venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: auth-venv-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: auth-venv-
+
+      - name: Load Cached Pre-commit
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: auth-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: auth-pre-commit-
+
+      - name: Load Mypy Cache
+        uses: actions/cache@v3
+        with:
+          path: .mypy_cache
+          key: auth-mypy
+
+      - name: Install Dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install Project
+        id: install
+        run: poetry install --no-interaction
+
+      - name: Activate virtualenv
+        id: venv
+        run: |
+          source .venv/bin/activate
+          echo PATH=$PATH >> $GITHUB_ENV
+
+      - name: Upgrade database to latest migration
+        if: inputs.database
+        run: alembic upgrade head
+
+      - name: Check that database is up to date with code
+        if: inputs.database
+        run: |
+          alembic revision --autogenerate -m "test" --rev-id 0
+          lines=$(cat ./alembic/versions/0_test.py | wc -l)
+          echo $lines
+          if [ $lines -ne 30 ]; then
+            exit 1
+          fi
+
+      - name: Run pytest
+        run: pytest tests -p no:cacheprovider --cov=app ${{ !inputs.coverage && '--cov-fail-under=0' || ''}}
+
+      - name: Run pre-commit for all files
+        if: success() || (failure() && steps.venv.conclusion == 'success')
+        run: pre-commit run --show-diff-on-failure --color=always --all-files
+
+  build:
+    needs: prepare
+    uses: xi-effect/xi.actions/.github/workflows/docker-build.yml@main
+    with:
+      tag: ${{ inputs.tag }}
+      base-tag: ${{ inputs.base-tag }}
+    secrets: inherit

@@ -1,0 +1,31 @@
+name: Preproduction (Create PR)
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  pull-request:
+    runs-on: ubuntu-latest
+
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Create pull request
+        uses: devops-infra/action-pull-request@v0.5.1
+        with:
+          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+          source_branch: staging
+          target_branch: main
+          title: New Version
+          label: "ci:covered,ci:migrated"
+          body: |-
+            - [ ] version update
+            - [ ] migration test
+            - [ ] docker image check

@@ -11,6 +11,9 @@ literal-include-name = true
 
 rst-roles = py:class, py:func, py:ref, py:attr
 
+extend-exclude =
+  alembic
+
 # black
 max-line-length = 88
 
@@ -37,6 +40,7 @@ extend-ignore =
   WPS100  # utils is a module name
   WPS237 WPS305  # f-strings are the best
   WPS306  # python 2.x is deprecated
+  WPS402  # noqa exists for a reason
   WPS420 WPS604  # pass is a thing
   WPS430  # nested functions
   WPS451  # positional-only arguments
@@ -47,3 +51,4 @@ extend-ignore =
 
 per-file-ignores =
   *test*: TN101 FNE005 SCS108 VNE001 WPS202 WPS211 WPS317 WPS407 WPS425 WPS432 WPS440 WPS437 WPS441 WPS442 WPS507 WPS520 WPS609
+  alembic/versions/*: WPS102 PEA001 NU001 SIM907

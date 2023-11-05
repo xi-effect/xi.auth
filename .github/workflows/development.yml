@@ -1,0 +1,115 @@
+name: Development + Staging (PR)
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+      - unlabeled
+    branches:
+      - main
+      - staging
+
+jobs:
+  namer:
+    runs-on: ubuntu-latest
+
+    outputs:
+      branch: ${{ steps.branch_name.outputs.branch }}
+      tag: ${{ steps.branch_name.outputs.tag }}
+      base_branch: ${{ steps.branch_name.outputs.base_branch }}
+      base_tag: ${{ steps.branch_name.outputs.base_tag }}
+
+    steps:
+      - name: Get tag & branch name
+        id: branch_name
+        run: |-
+          branch=${{ github.event.pull_request.head.ref }}
+          echo "branch=${branch}"
+          echo "branch=${branch}" >> $GITHUB_OUTPUT
+
+          tag="auth-${branch////-}"
+          echo "tag=${tag}"
+          echo "tag=${tag}" >> $GITHUB_OUTPUT
+
+          base_branch=${{ github.event.pull_request.base.ref }}
+          echo "base_branch=${base_branch}"
+          echo "base_branch=${base_branch}" >> $GITHUB_OUTPUT
+
+          base_tag="auth-${base_branch////-}"
+          echo "base_tag=${base_tag}"
+          echo "base_tag=${base_tag}" >> $GITHUB_OUTPUT
+
+  prepare:
+    needs: namer
+    uses: ./.github/workflows/common-work.yml
+    with:
+      tag: ${{ needs.namer.outputs.tag }}
+      base-tag: ${{ needs.namer.outputs.base_tag }}
+      coverage: ${{ contains(github.event.pull_request.labels.*.name, 'ci:covered') }}
+      database: ${{ contains(github.event.pull_request.labels.*.name, 'ci:migrated') }}
+    secrets: inherit
+
+  deploy_staging:
+    needs:
+      - namer
+      - prepare
+    if: >
+      contains(github.event.pull_request.labels.*.name, 'ci:covered')
+      && contains(github.event.pull_request.labels.*.name, 'ci:migrated')
+      && contains(github.event.pull_request.labels.*.name, 'ci:deployable')
+
+    runs-on: ubuntu-latest
+    environment: >
+      ${{
+        needs.namer.outputs.branch == 'staging'
+        && github.actor == github.triggering_actor
+        && 'staging'
+        || 'manual-staging'
+      }}
+
+    env:
+      pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ needs.namer.outputs.tag }}
+      deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
+
+    steps:
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          script: |-
+            cd ~/xieffect-core
+            docker pull ${{ env.pull_image }}
+            docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
+            ${{ needs.namer.outputs.branch != 'staging' }} || docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
+            docker compose --profile stage up -d
+            ${{ needs.namer.outputs.branch != 'staging' }} || docker compose --profile stage exec auth-stage alembic heads | cut -d ' ' --fields=1 > auth-stage-version.txt
+            docker image prune -f
+          script_stop: true
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :white_check_mark: Service xi.auth successfully deployed
+            Commit: `${{ github.event.pull_request.head.sha }}`
+            Branch: `${{ needs.namer.outputs.branch }}`
+            Issuer: `${{ github.triggering_actor }}`
+
+      - name: Report failure to discord
+        if: failure()
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :red_circle: [Service xi.auth failed to deploy](<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>)
+            Commit: `${{ github.event.pull_request.head.sha }}`
+            Branch: `${{ needs.namer.outputs.branch }}`
+            Issuer: `${{ github.triggering_actor }}`

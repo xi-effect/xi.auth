@@ -17,9 +17,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(100))
     password: Mapped[str] = mapped_column(String(100))
 
-    __table_args__ = (
-        Index("hash_index_users_email", email, postgresql_using="hash", unique=True),
-    )
+    __table_args__ = (Index("hash_index_users_email", email, postgresql_using="hash"),)
 
     InputModel = MappedModel.create(columns=[email, password])
     PatchModel = InputModel.as_patch()
