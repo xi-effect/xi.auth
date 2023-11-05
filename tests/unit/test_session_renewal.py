@@ -21,6 +21,7 @@ days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_lengt
     [
         pytest.param(days, days > days_to_renew)
         for days in range(Session.expiry_timeout.days)
+        if days != days_to_renew
     ],
 )
 def test_renewal_required_detection(

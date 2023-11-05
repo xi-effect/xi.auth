@@ -1,0 +1,60 @@
+name: Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_test_docs:
+    if: github.triggering_actor == 'niqzart'
+    uses: ./.github/workflows/common-work.yml
+    with:
+      tag: auth-main
+      base-tag: auth-staging
+    secrets: inherit
+
+  deploy_production:
+    if: github.triggering_actor == 'niqzart'
+    needs: build_test_docs
+    runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      pull_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:auth-main
+      deploy_image: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_USERNAME }}:${{ secrets.DEPLOY_TAG }}
+
+    steps:
+      - name: Run SSH commands
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
+          script: |-
+            cd ~/xieffect-core
+            docker pull ${{ env.pull_image }}
+            docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
+            docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
+            docker compose up -d
+            docker image prune -f
+          script_stop: true
+
+      - name: Report status to discord
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :tea: Service xi.auth successfully deployed
+            Commit: `${{ github.sha }}`
+
+      - name: Report failure to discord
+        if: failure()
+        uses: tsickert/discord-webhook@v5.3.0
+        with:
+          webhook-url: ${{ secrets.DISCORD_WEBHOOK }}
+          content: |-
+            :broken_heart: [Service xi.auth failed to deploy](<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>)
+            Commit: `${{ github.sha }}`
