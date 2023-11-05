@@ -11,6 +11,9 @@ literal-include-name = true
 
 rst-roles = py:class, py:func, py:ref, py:attr
 
+extend-exclude =
+  alembic
+
 # black
 max-line-length = 88
 
