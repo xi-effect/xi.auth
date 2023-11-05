@@ -23,7 +23,8 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DB_LINK: ${{ inputs.database && 'postgresql+psycopg2://test:test@localhost:5432/test' || 'sqlite+aiosqlite:///app.db' }}
+      DB_LINK: ${{ inputs.database && 'postgresql+asyncpg://test:test@localhost:5432/test' || 'sqlite+aiosqlite:///app.db' }}
+      DB_SCHEMA: ${{ inputs.database && 'xi_auth' || '' }}
 
     services:
       db:
@@ -90,7 +91,19 @@ jobs:
           source .venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
-      # TODO alembic
+      - name: Upgrade database to latest migration
+        if: inputs.database
+        run: alembic upgrade head
+
+      - name: Check that database is up to date with code
+        if: inputs.database
+        run: |
+          alembic revision --autogenerate -m "test" --rev-id 0
+          lines=$(cat ./alembic/versions/0_test.py | wc -l)
+          echo $lines
+          if [ $lines -ne 30 ]; then
+            exit 1
+          fi
 
       - name: Run pytest
         run: pytest tests -p no:cacheprovider --cov=app ${{ !inputs.coverage && '--cov-fail-under=0' || ''}}

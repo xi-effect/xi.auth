@@ -74,6 +74,7 @@ fail_under = 100
 exclude_lines = [
   "pragma: no cover",
   "if TYPE_CHECKING:",
+  "if( not)? PRODUCTION_MODE:",
   "except ImportError",
   "raise AssertionError",
   "raise NotImplementedError",
