@@ -46,12 +46,27 @@ docker-compose --profile app down
 
 # смотреть логи в реальном времени
 docker-compose logs --follow <сервис>
-docker-compose logs --follow mongo  # пример
+docker-compose logs --follow api  # пример
 
 # проверить статусы сервисов
 docker-compose ps -a
 
 # зайти в какой-то контейнер
-docker-compose exec <сервис> <shell-команда>
-docker-compose exec mongo sh  # пример
+docker-compose exec -ti <сервис> <shell-команда>
+docker-compose exec -ti db psql -U test -d test  # пример
+```
+
+### Alembic
+Используется для автосоздания миграций БД. Запуск вспомогательного контейнера для миграций:
+```sh
+docker compose run --rm -ti alembic
+```
+Команды для самих миграций:
+```sh
+alembic upgrade head
+alembic revision --autogenerate -m "<message>" --rev-id "<issue>"
+```
+Сбросить базу или просто завершить работу с миграциями:
+```sh
+docker compose --profile migration down
 ```
