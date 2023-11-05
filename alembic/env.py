@@ -6,6 +6,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
+from sqlalchemy.sql.ddl import CreateSchema
+
 from app.common.config import db_meta
 from app.main import DB_URL
 
@@ -57,9 +59,15 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        version_table_schema=target_metadata.schema,
+        include_schemas=True,
+    )
 
     with context.begin_transaction():
+        context.execute(CreateSchema("xi_auth", if_not_exists=True))
         context.run_migrations()
 
 
