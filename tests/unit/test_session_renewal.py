@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager, suppress
 from datetime import timedelta
 from typing import Final
 
@@ -11,7 +10,7 @@ from app.models.users_db import User
 from app.utils.authorization import authorize_user
 from tests.conftest import ActiveSession
 from tests.functional.test_reglog import assert_session_cookie
-from tests.unit.conftest import MockStack, TestException
+from tests.unit.conftest import MockStack
 
 days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_length).days
 
@@ -70,32 +69,10 @@ async def test_automatic_renewal(
 
     async with active_session():
         session = await Session.create(user_id=user.id, cross_site=cross_site)
-        async with asynccontextmanager(authorize_user)(  # noqa: WPS328
-            session, response
-        ):
-            pass
+        await authorize_user(session, response)
 
     async with active_session():
         await assert_session_cookie(response, cross_site=cross_site)
 
     session_is_renewal_required.assert_called_once_with()
     session_renew_mock.assert_called_once_with()
-
-
-@pytest.mark.anyio()
-async def test_no_renewal_on_error(
-    mock_stack: MockStack,
-    active_session: ActiveSession,
-    user: User,
-) -> None:
-    session_is_renewal_required = mock_stack.enter_mock(Session, "is_renewal_required")
-    response = Response()
-
-    async with active_session():
-        session = await Session.create(user_id=user.id)
-        with suppress(TestException):
-            async with asynccontextmanager(authorize_user)(session, response):
-                raise TestException
-
-    assert response.headers.get("Set-Cookie") is None
-    session_is_renewal_required.assert_not_called()

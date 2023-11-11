@@ -1,4 +1,3 @@
-from collections.abc import AsyncIterator
 from datetime import timezone
 from typing import Annotated, Final
 
@@ -65,12 +64,12 @@ CrossSiteMode = Annotated[bool, Depends(is_cross_site_mode)]
 async def authorize_user(
     session: AuthorizedSession,
     response: Response,
-) -> AsyncIterator[User]:
-    yield await session.awaitable_attrs.user
-
+) -> User:
     if session.is_renewal_required():
         session.renew()
         add_session_to_response(response, session)
+
+    return await session.awaitable_attrs.user  # type: ignore[no-any-return]
 
 
 AuthorizedUser = Annotated[User, Depends(authorize_user)]
