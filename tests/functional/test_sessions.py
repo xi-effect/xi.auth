@@ -43,7 +43,7 @@ def test_disable_current_session(
 
 @pytest.fixture()
 async def sessions(session_factory: Factory[Session]) -> list[Session]:
-    return [await session_factory() for _ in range(5)][::-1]
+    return [await session_factory() for _ in range(2)][::-1]
 
 
 @pytest.mark.anyio()

@@ -65,6 +65,10 @@ line_length = 88
 exclude = "alembic"
 plugins = "pydantic_marshals.mypy.plugin"
 
+[tool.coverage.run]
+concurrency = ["greenlet", "thread"]
+sigterm = true
+
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
