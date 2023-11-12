@@ -82,18 +82,27 @@ async def test_signup(
 
 
 @pytest.mark.anyio()
+@pytest.mark.parametrize(
+    ("data_mod", "error"),
+    [
+        pytest.param({"email": "n@new.new"}, "Username already in use", id="username"),
+        pytest.param({"username": "new_one"}, "Email already in use", id="email"),
+    ],
+)
 async def test_signup_conflict(
     client: TestClient,
     active_session: ActiveSession,
     user_data: dict[str, Any],
     user: User,
     is_cross_site: bool,
+    data_mod: dict[str, Any],
+    error: str,
 ) -> None:
     headers = {"X-Testing": "true"} if is_cross_site else {}
     assert_response(
-        client.post("/api/signup", json=user_data, headers=headers),
+        client.post("/api/signup", json={**user_data, **data_mod}, headers=headers),
         expected_code=409,
-        expected_json={"detail": "Email already in use"},
+        expected_json={"detail": error},
         expected_headers={"Set-Cookie": None},
     )
 

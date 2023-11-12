@@ -26,15 +26,24 @@ async def test_creation(
         await user.delete()
 
 
+@pytest.mark.parametrize(
+    ("data_mod", "error"),
+    [
+        pytest.param({"email": "n@new.new"}, "Username already in use", id="username"),
+        pytest.param({"username": "new_one"}, "Email already in use", id="email"),
+    ],
+)
 def test_creation_conflict(
     client: TestClient,
     user_data: dict[str, Any],
     user: User,
+    data_mod: dict[str, Any],
+    error: str,
 ) -> None:
     assert_response(
-        client.post("/mub/users", json=user_data),
+        client.post("/mub/users", json={**user_data, **data_mod}),
         expected_code=409,
-        expected_json={"detail": "Email already in use"},
+        expected_json={"detail": error},
     )
 
 

@@ -15,13 +15,18 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(100))
+    username: Mapped[str] = mapped_column(String(100))
     password: Mapped[str] = mapped_column(String(100))
 
-    __table_args__ = (Index("hash_index_users_email", email, postgresql_using="hash"),)
+    __table_args__ = (
+        Index("hash_index_users_username", username, postgresql_using="hash"),
+        Index("hash_index_users_email", email, postgresql_using="hash"),
+    )
 
-    InputModel = MappedModel.create(columns=[email, password])
+    InputModel = MappedModel.create(columns=[username, email, password])
     PatchModel = InputModel.as_patch()
-    FullModel = MappedModel.create(columns=[id, email])
+    ProfileModel = MappedModel.create(columns=[id, username])
+    FullModel = ProfileModel.extend(columns=[email])
 
     @staticmethod
     def generate_hash(password: str) -> str:

@@ -66,7 +66,11 @@ def client() -> TestClient:
 
 @pytest.fixture()
 async def user_data(faker: Faker) -> dict[str, Any]:
-    return {"email": faker.email(), "password": faker.password()}
+    return {
+        "username": faker.name(),
+        "email": faker.email(),
+        "password": faker.password(),
+    }
 
 
 @pytest.fixture()
