@@ -1,7 +1,7 @@
 from typing import Annotated, ClassVar
 
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
-from pydantic import AfterValidator
+from pydantic import AfterValidator, Field
 from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import Index, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -13,9 +13,13 @@ class User(Base):
     __tablename__ = "users"
     not_found_text: ClassVar[str] = "User not found"
 
+    @staticmethod
+    def generate_hash(password: str) -> str:
+        return pbkdf2_sha256.hash(password)
+
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(100))
-    username: Mapped[str] = mapped_column(String(100))
+    username: Mapped[str] = mapped_column(String(30))
     password: Mapped[str] = mapped_column(String(100))
 
     __table_args__ = (
@@ -23,18 +27,14 @@ class User(Base):
         Index("hash_index_users_email", email, postgresql_using="hash"),
     )
 
-    InputModel = MappedModel.create(columns=[username, email, password])
-    PatchModel = InputModel.as_patch()
-    ProfileModel = MappedModel.create(columns=[id, username])
-    FullModel = ProfileModel.extend(columns=[email])
+    username_field = (username, Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,30}")])
+    password_field = (password, Annotated[str, AfterValidator(generate_hash)])
 
-    @staticmethod
-    def generate_hash(password: str) -> str:
-        return pbkdf2_sha256.hash(password)
+    InputModel = MappedModel.create(columns=[username_field, email, password_field])
+    PatchModel = InputModel.as_patch()
+    CredentialsModel = MappedModel.create(columns=[email, password])
+    ProfileModel = MappedModel.create(columns=[id, username_field])
+    FullModel = ProfileModel.extend(columns=[email])
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)
-
-
-class UserPasswordModel(User.InputModel):
-    password: Annotated[str, AfterValidator(User.generate_hash)]

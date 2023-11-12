@@ -67,7 +67,7 @@ def client() -> TestClient:
 @pytest.fixture()
 async def user_data(faker: Faker) -> dict[str, Any]:
     return {
-        "username": faker.name(),
+        "username": faker.profile(fields=["username"])["username"],
         "email": faker.email(),
         "password": faker.password(),
     }
@@ -90,6 +90,7 @@ async def other_user(
 ) -> User:
     async with active_session():
         return await User.create(
+            username=faker.profile(fields=["username"])["username"],
             email=faker.email(),
             password=User.generate_hash(faker.password()),
         )

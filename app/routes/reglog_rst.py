@@ -3,7 +3,7 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
 from app.common.responses import Responses
 from app.models.sessions_db import Session
-from app.models.users_db import User, UserPasswordModel
+from app.models.users_db import User
 from app.utils.authorization import (
     AuthorizedResponses,
     AuthorizedSession,
@@ -26,7 +26,7 @@ class SignupResponses(Responses):
     responses=SignupResponses.responses(),
 )
 async def signup(
-    user_data: UserPasswordModel, cross_site: CrossSiteMode, response: Response
+    user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
 ) -> User:
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
         raise SignupResponses.EMAIL_IN_USE.value
@@ -54,7 +54,7 @@ class SigninResponses(Responses):
     responses=SigninResponses.responses(),
 )
 async def signin(
-    user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
+    user_data: User.CredentialsModel, cross_site: CrossSiteMode, response: Response
 ) -> User:
     user = await User.find_first_by_kwargs(email=user_data.email)
     if user is None:

@@ -2,14 +2,14 @@ from fastapi import APIRouter
 from starlette.status import HTTP_404_NOT_FOUND
 
 from app.common.responses import Responses
-from app.models.users_db import User, UserPasswordModel
+from app.models.users_db import User
 from app.routes.reglog_rst import SignupResponses
 
 router = APIRouter(tags=["users mub"])
 
 
 @router.post("/", response_model=User.FullModel, responses=SignupResponses.responses())
-async def create_user(user_data: UserPasswordModel) -> User:
+async def create_user(user_data: User.InputModel) -> User:
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
         raise SignupResponses.EMAIL_IN_USE.value
     if await User.find_first_by_kwargs(username=user_data.username) is not None:
