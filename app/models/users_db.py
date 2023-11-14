@@ -27,13 +27,20 @@ class User(Base):
         Index("hash_index_users_email", email, postgresql_using="hash"),
     )
 
-    username_field = (username, Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,30}")])
-    password_field = (password, Annotated[str, AfterValidator(generate_hash)])
+    PasswordType = Annotated[
+        str, Field(min_length=6, max_length=100), AfterValidator(generate_hash)
+    ]
 
-    InputModel = MappedModel.create(columns=[username_field, email, password_field])
+    InputModel = MappedModel.create(
+        columns=[
+            (username, Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,30}")]),
+            email,  # TODO (email, Annotated[str, AfterValidator(email_validator)]),
+            (password, PasswordType),
+        ]
+    )
     PatchModel = InputModel.as_patch()
     CredentialsModel = MappedModel.create(columns=[email, password])
-    ProfileModel = MappedModel.create(columns=[id, username_field])
+    ProfileModel = MappedModel.create(columns=[id, username])
     FullModel = ProfileModel.extend(columns=[email])
 
     def is_password_valid(self, password: str) -> bool:
