@@ -16,7 +16,7 @@ router = APIRouter(tags=["user sessions"])
 
 
 @router.get(
-    "/current",
+    "/current/",
     response_model=Session.FullModel,
     responses=AuthorizedResponses.responses(),
 )
@@ -45,7 +45,9 @@ class SessionResponses(Responses):
     SESSION_NOT_FOUND = (HTTP_404_NOT_FOUND, Session.not_found_text)
 
 
-@router.delete("/{session_id}", responses=SessionResponses.responses(), status_code=204)
+@router.delete(
+    "/{session_id}/", responses=SessionResponses.responses(), status_code=204
+)
 async def disable_session(session_id: int, user: AuthorizedUser) -> None:
     session = await Session.find_first_by_kwargs(id=session_id, user_id=user.id)
     if session is None:

@@ -22,7 +22,7 @@ class UserResponses(Responses):
 
 
 @router.get(
-    "/{user_id}",
+    "/{user_id}/",
     response_model=User.FullModel,
     responses=UserResponses.responses(),
 )
@@ -34,7 +34,7 @@ async def retrieve_user(user_id: int) -> User:
 
 
 @router.put(
-    "/{user_id}",
+    "/{user_id}/",
     response_model=User.FullModel,
     responses=UserResponses.responses(),
 )
@@ -48,7 +48,7 @@ async def update_user(user_id: int, user_data: User.PatchModel) -> User:
 
 
 @router.delete(
-    "/{user_id}",
+    "/{user_id}/",
     status_code=204,
     responses=UserResponses.responses(),
 )

@@ -16,7 +16,7 @@ async def test_creation(
     user_data: dict[str, Any],
 ) -> None:
     user_id: int = assert_response(
-        client.post("/mub/users", json=user_data),
+        client.post("/mub/users/", json=user_data),
         expected_json={**user_data, "id": int, "password": None},
     ).json()["id"]
 
@@ -41,7 +41,7 @@ def test_creation_conflict(
     error: str,
 ) -> None:
     assert_response(
-        client.post("/mub/users", json={**user_data, **data_mod}),
+        client.post("/mub/users/", json={**user_data, **data_mod}),
         expected_code=409,
         expected_json={"detail": error},
     )
@@ -49,7 +49,7 @@ def test_creation_conflict(
 
 def test_getting(client: TestClient, user: User, user_data: dict[str, Any]) -> None:
     assert_response(
-        client.get(f"/mub/users/{user.id}"),
+        client.get(f"/mub/users/{user.id}/"),
         expected_json={**user_data, "id": user.id, "password": None},
     )
 
@@ -73,13 +73,13 @@ def test_updating(
         new_user_data["password"] = faker.password()
 
     assert_response(
-        client.put(f"/mub/users/{user.id}", json=new_user_data),
+        client.put(f"/mub/users/{user.id}/", json=new_user_data),
         expected_json={**user_data, **new_user_data, "id": user.id, "password": None},
     )
 
 
 def test_deleting(client: TestClient, user: User) -> None:
-    assert_nodata_response(client.delete(f"/mub/users/{user.id}"))
+    assert_nodata_response(client.delete(f"/mub/users/{user.id}/"))
 
 
 @pytest.mark.anyio()
@@ -91,7 +91,7 @@ async def test_not_found(
         await user.delete()
     assert_response(
         client.request(
-            method, f"/mub/users/{user.id}", json={} if method == "PUT" else None
+            method, f"/mub/users/{user.id}/", json={} if method == "PUT" else None
         ),
         expected_code=404,
         expected_json={"detail": "User not found"},

@@ -21,7 +21,7 @@ class SignupResponses(Responses):
 
 
 @router.post(
-    "/signup",
+    "/signup/",
     response_model=User.FullModel,
     responses=SignupResponses.responses(),
 )
@@ -49,7 +49,7 @@ class SigninResponses(Responses):
 
 
 @router.post(
-    "/signin",
+    "/signin/",
     response_model=User.FullModel,
     responses=SigninResponses.responses(),
 )
@@ -70,7 +70,7 @@ async def signin(
     return user
 
 
-@router.post("/signout", responses=AuthorizedResponses.responses(), status_code=204)
+@router.post("/signout/", responses=AuthorizedResponses.responses(), status_code=204)
 async def signout(session: AuthorizedSession, response: Response) -> None:
     session.disabled = True
     remove_session_from_response(response)
