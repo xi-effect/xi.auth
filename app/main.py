@@ -2,7 +2,6 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -16,6 +15,7 @@ from app.common.config import (
 )
 from app.common.sqla import session_context
 from app.routes import proxy_rst, reglog_rst, sessions_rst, users_mub, users_rst
+from app.utils.cors import CorrectCORSMiddleware
 
 
 @asynccontextmanager
@@ -33,7 +33,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
-    CORSMiddleware,
+    CorrectCORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
