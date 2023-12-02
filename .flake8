@@ -23,7 +23,7 @@ extend-ignore =
   D I FI TC Q U101 S101 WPS400
 
   # black
-  WPS348 C812
+  WPS317 WPS348 C812
   # pydantic-marshals & SQLAlchemy
   VNE003 WPS115
   # weird

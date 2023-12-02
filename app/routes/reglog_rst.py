@@ -3,7 +3,7 @@ from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
 from app.common.responses import Responses
 from app.models.sessions_db import Session
-from app.models.users_db import User, UserPasswordModel
+from app.models.users_db import User
 from app.utils.authorization import (
     AuthorizedResponses,
     AuthorizedSession,
@@ -17,18 +17,21 @@ router = APIRouter(tags=["reglog"])
 
 class SignupResponses(Responses):
     EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
+    USERNAME_IN_USE = (HTTP_409_CONFLICT, "Username already in use")
 
 
 @router.post(
-    "/signup",
+    "/signup/",
     response_model=User.FullModel,
     responses=SignupResponses.responses(),
 )
 async def signup(
-    user_data: UserPasswordModel, cross_site: CrossSiteMode, response: Response
+    user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
 ) -> User:
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
         raise SignupResponses.EMAIL_IN_USE.value
+    if await User.find_first_by_kwargs(username=user_data.username) is not None:
+        raise SignupResponses.USERNAME_IN_USE.value
 
     user = await User.create(**user_data.model_dump())
 
@@ -46,12 +49,12 @@ class SigninResponses(Responses):
 
 
 @router.post(
-    "/signin",
+    "/signin/",
     response_model=User.FullModel,
     responses=SigninResponses.responses(),
 )
 async def signin(
-    user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
+    user_data: User.CredentialsModel, cross_site: CrossSiteMode, response: Response
 ) -> User:
     user = await User.find_first_by_kwargs(email=user_data.email)
     if user is None:
@@ -67,7 +70,7 @@ async def signin(
     return user
 
 
-@router.post("/signout", responses=AuthorizedResponses.responses(), status_code=204)
+@router.post("/signout/", responses=AuthorizedResponses.responses(), status_code=204)
 async def signout(session: AuthorizedSession, response: Response) -> None:
     session.disabled = True
     remove_session_from_response(response)

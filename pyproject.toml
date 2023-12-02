@@ -11,7 +11,7 @@ fastapi = "^0.100.0"
 uvicorn = {extras = ["standard"], version = "^0.22.0"}
 sqlalchemy = {extras = ["asyncio"], version = "^2.0.18"}
 asyncpg = "^0.28.0"
-pydantic-marshals = "0.3.6"
+pydantic-marshals = "0.3.12"
 aenum = "^3.1.15"
 passlib = "^1.7.4"
 alembic = "^1.12.1"
@@ -64,6 +64,10 @@ line_length = 88
 [tool.mypy]
 exclude = "alembic"
 plugins = "pydantic_marshals.mypy.plugin"
+
+[tool.coverage.run]
+concurrency = ["greenlet", "thread"]
+sigterm = true
 
 [tool.coverage.report]
 show_missing = true

@@ -59,7 +59,7 @@ docker-compose exec -ti db psql -U test -d test  # пример
 ### Alembic
 Используется для автосоздания миграций БД. Запуск вспомогательного контейнера для миграций:
 ```sh
-docker compose run --rm -ti alembic
+docker compose run --build --rm -ti alembic
 ```
 Команды для самих миграций:
 ```sh

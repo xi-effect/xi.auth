@@ -14,7 +14,8 @@ from app.common.config import (
     sessionmaker,
 )
 from app.common.sqla import session_context
-from app.routes import reglog_rst, sessions_mub, sessions_rst, users_mub, users_rst
+from app.routes import proxy_rst, reglog_rst, sessions_rst, users_mub, users_rst
+from app.utils.cors import CorrectCORSMiddleware
 
 
 @asynccontextmanager
@@ -31,6 +32,14 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CorrectCORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # API
 app.include_router(reglog_rst.router, prefix="/api")
 app.include_router(users_rst.router, prefix="/api/users")
@@ -38,7 +47,9 @@ app.include_router(sessions_rst.router, prefix="/api/sessions")
 
 # MUB
 app.include_router(users_mub.router, prefix="/mub/users")
-app.include_router(sessions_mub.router, prefix="/mub/sessions")
+
+# Proxy
+app.include_router(proxy_rst.router, prefix="/proxy/auth")
 
 
 @app.middleware("http")

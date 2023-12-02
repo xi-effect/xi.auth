@@ -68,7 +68,7 @@ async def test_signup(
 ) -> None:
     headers = {"X-Testing": "true"} if is_cross_site else {}
     response = assert_response(
-        client.post("/api/signup", json=user_data, headers=headers),
+        client.post("/api/signup/", json=user_data, headers=headers),
         expected_json={**user_data, "id": int, "password": None},
         expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
     )
@@ -82,18 +82,27 @@ async def test_signup(
 
 
 @pytest.mark.anyio()
+@pytest.mark.parametrize(
+    ("data_mod", "error"),
+    [
+        pytest.param({"email": "n@new.new"}, "Username already in use", id="username"),
+        pytest.param({"username": "new_one"}, "Email already in use", id="email"),
+    ],
+)
 async def test_signup_conflict(
     client: TestClient,
     active_session: ActiveSession,
     user_data: dict[str, Any],
     user: User,
     is_cross_site: bool,
+    data_mod: dict[str, Any],
+    error: str,
 ) -> None:
     headers = {"X-Testing": "true"} if is_cross_site else {}
     assert_response(
-        client.post("/api/signup", json=user_data, headers=headers),
+        client.post("/api/signup/", json={**user_data, **data_mod}, headers=headers),
         expected_code=409,
-        expected_json={"detail": "Email already in use"},
+        expected_json={"detail": error},
         expected_headers={"Set-Cookie": None},
     )
 
@@ -108,7 +117,7 @@ async def test_signin(
 ) -> None:
     headers = {"X-Testing": "true"} if is_cross_site else {}
     response = assert_response(
-        client.post("/api/signin", json=user_data, headers=headers),
+        client.post("/api/signin/", json=user_data, headers=headers),
         expected_json={**user_data, "id": user.id, "password": None},
         expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
     )
@@ -132,7 +141,7 @@ def test_signin_errors(
     error: str,
 ) -> None:
     assert_response(
-        client.post("/api/signin", json={**user_data, altered_key: "alter"}),
+        client.post("/api/signin/", json={**user_data, altered_key: "alter"}),
         expected_code=401,
         expected_json={"detail": error},
         expected_headers={"Set-Cookie": None},
@@ -153,7 +162,7 @@ async def test_signout(
 
 def test_no_auth_header(client: TestClient) -> None:
     assert_response(
-        client.post("/api/signout"),
+        client.post("/api/signout/"),
         expected_code=401,
         expected_json={"detail": "Authorization cookie is missing"},
     )
@@ -165,7 +174,7 @@ def test_invalid_session(
     cookies = {AUTH_COOKIE: invalid_token} if use_cookie_auth else {}
     headers = {} if use_cookie_auth else {AUTH_HEADER: invalid_token}
     assert_response(
-        client.post("/api/signout", cookies=cookies, headers=headers),
+        client.post("/api/signout/", cookies=cookies, headers=headers),
         expected_code=401,
         expected_json={"detail": "Session is invalid"},
     )

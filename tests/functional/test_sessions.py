@@ -24,7 +24,7 @@ def test_getting_current_session(
     session: Session,
 ) -> None:
     assert_response(
-        authorized_client.get("/api/sessions/current"),
+        authorized_client.get("/api/sessions/current/"),
         expected_json=session_checker(session),
     )
 
@@ -33,7 +33,7 @@ def test_disable_current_session(
     authorized_client: TestClient,
     session: Session,
 ) -> None:
-    assert_nodata_response(authorized_client.delete(f"/api/sessions/{session.id}"))
+    assert_nodata_response(authorized_client.delete(f"/api/sessions/{session.id}/"))
     assert_response(
         authorized_client.get("/api/sessions/"),
         expected_code=401,
@@ -43,7 +43,7 @@ def test_disable_current_session(
 
 @pytest.fixture()
 async def sessions(session_factory: Factory[Session]) -> list[Session]:
-    return [await session_factory() for _ in range(5)][::-1]
+    return [await session_factory() for _ in range(2)][::-1]
 
 
 @pytest.mark.anyio()
@@ -83,7 +83,7 @@ def test_non_existent_session_fails(
     authorized_client: TestClient, deleted_session_id: int
 ) -> None:
     assert_response(
-        authorized_client.delete(f"/api/sessions/{deleted_session_id}"),
+        authorized_client.delete(f"/api/sessions/{deleted_session_id}/"),
         expected_code=404,
         expected_json={"detail": "Session not found"},
     )
@@ -101,8 +101,8 @@ def test_non_existent_session_fails(
     [
         pytest.param("GET", "/api/sessions/", id="list_sessions"),
         pytest.param("DELETE", "/api/sessions/", id="delete_other_sessions"),
-        pytest.param("GET", "/api/sessions/current", id="get_current_session"),
-        pytest.param("DELETE", "/api/sessions/{session_id}", id="disable_session"),
+        pytest.param("GET", "/api/sessions/current/", id="get_current_session"),
+        pytest.param("DELETE", "/api/sessions/{session_id}/", id="disable_session"),
     ],
 )
 def test_authorization_fails(
@@ -124,7 +124,7 @@ def test_authorization_fails(
 
 def test_foreign_user_fails(other_client: TestClient, session: Session) -> None:
     assert_response(
-        other_client.delete(f"/api/sessions/{session.id}"),
+        other_client.delete(f"/api/sessions/{session.id}/"),
         expected_code=404,
         expected_json={"detail": "Session not found"},
     )

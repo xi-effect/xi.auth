@@ -49,7 +49,7 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/backend/app
-      - ./test:/backend/test
+      - ./tests:/backend/tests
     environment:
       WATCHFILES_FORCE_POLLING: true
       DB_LINK: postgresql+asyncpg://test:test@db:5432/test
