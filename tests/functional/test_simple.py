@@ -41,6 +41,22 @@ async def test_proxy_auth_success(
     )
 
 
+@pytest.mark.anyio()
+async def test_proxy_auth_success_for_optional(
+    authorized_client: TestClient,
+    session: Session,
+    user: User,
+) -> None:
+    assert_nodata_response(
+        authorized_client.get("/proxy/auth/", headers={"X-Request-Method": "OPTIONS"}),
+        expected_headers={
+            "X-User-ID": None,
+            "X-Username": None,
+            "X-Session-ID": None,
+        },
+    )
+
+
 @pytest.mark.parametrize("cross_site", [False, True], ids=["same_site", "cross_site"])
 @pytest.mark.anyio()
 async def test_proxy_auth_renewal(
