@@ -19,4 +19,5 @@ async def proxy_auth(
     session: AuthorizedSession, user: AuthorizedUser, response: Response
 ) -> None:
     response.headers["X-User-ID"] = str(user.id)
+    response.headers["X-Username"] = str(user.username)
     response.headers["X-Session-ID"] = str(session.id)

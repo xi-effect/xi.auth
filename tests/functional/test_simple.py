@@ -35,6 +35,7 @@ async def test_proxy_auth_success(
         authorized_client.get("/proxy/auth/"),
         expected_headers={
             "X-User-ID": str(user.id),
+            "X-Username": str(user.username),
             "X-Session-ID": str(session.id),
         },
     )
@@ -58,6 +59,7 @@ async def test_proxy_auth_renewal(
         authorized_client.get("/proxy/auth/"),
         expected_headers={
             "X-User-ID": str(user.id),
+            "X-Username": str(user.username),
             "X-Session-ID": str(session.id),
             "Set-Cookie": constr(pattern=COOKIE_REGEX),
         },
