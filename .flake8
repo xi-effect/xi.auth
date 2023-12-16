@@ -32,6 +32,7 @@ extend-ignore =
   PIE798 WPS226 WPS354 WPS432 WPS473 WPS507
   U100  # fails to understand `raise NotImplementedError` and overloading
   WPS428  # fails to understand overloading
+  WPS465  # fails to understand pipe-unions for types
   WPS601  # fails to same-name class and instance attributes (pydantic & sqlalchemy)
   # to many
   WPS201 WPS210 WPS214 WPS217 WPS218 WPS221

@@ -14,7 +14,7 @@ from app.common.sqla import session_context
 from app.main import app, lifespan
 from app.models.sessions_db import Session
 from app.models.users_db import User
-from app.utils.authorization import AUTH_COOKIE, AUTH_HEADER
+from app.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
 from tests.utils import PytestRequest
 
 pytest_plugins = ("anyio",)
@@ -133,8 +133,8 @@ def use_cookie_auth(request: PytestRequest[bool]) -> bool:
 @pytest.fixture()
 def authorized_client(session_token: str, use_cookie_auth: bool) -> TestClient:
     if use_cookie_auth:
-        return TestClient(app, cookies={AUTH_COOKIE: session_token})
-    return TestClient(app, headers={AUTH_HEADER: session_token})
+        return TestClient(app, cookies={AUTH_COOKIE_NAME: session_token})
+    return TestClient(app, headers={AUTH_HEADER_NAME: session_token})
 
 
 @pytest.fixture()
@@ -150,7 +150,7 @@ def other_session_token(other_session: Session) -> str:
 
 @pytest.fixture()
 def other_client(other_session_token: str) -> TestClient:
-    return TestClient(app, cookies={AUTH_COOKIE: other_session_token})
+    return TestClient(app, cookies={AUTH_COOKIE_NAME: other_session_token})
 
 
 @pytest.fixture()
