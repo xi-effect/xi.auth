@@ -1,0 +1,1 @@
+CREATE SCHEMA xi_auth;

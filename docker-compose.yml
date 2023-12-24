@@ -25,6 +25,9 @@ services:
     volumes:
       - type: tmpfs
         target: /var/lib/postgresql/data
+      - type: bind
+        source: ./init-schema.sql
+        target: /docker-entrypoint-initdb.d/init-schema.sql
     ports:
       - "5432:5432"
     healthcheck:
