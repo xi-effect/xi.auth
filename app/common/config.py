@@ -5,6 +5,7 @@ from sqlalchemy import MetaData, NullPool
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
+from app.common.rabbit import RabbitDirectProducer
 from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
@@ -15,6 +16,9 @@ DATABASE_RESET: bool = getenv("DATABASE_RESET", "0") == "1"
 
 DB_URL: str = getenv("DB_LINK", f"sqlite+aiosqlite:///{current_directory / 'app.db'}")
 DB_SCHEMA: str | None = getenv("DB_SCHEMA", None)
+
+MQ_URL: str = getenv("MQ_URL", "amqp://guest:guest@localhost/")
+MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
 
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
@@ -67,3 +71,6 @@ class Base(AsyncAttrs, DeclarativeBase, MappingBase):
     __abstract__: bool
 
     metadata = db_meta
+
+
+pochta_producer = RabbitDirectProducer(queue_name=MQ_POCHTA_QUEUE)
