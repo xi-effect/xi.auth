@@ -15,9 +15,16 @@ from app.main import app
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
+from tests.mock_stack import MockStack
 from tests.utils import PytestRequest
 
 pytest_plugins = ("anyio",)
+
+
+@pytest.fixture()
+def mock_stack() -> Iterator[MockStack]:
+    with MockStack() as stack:
+        yield stack
 
 
 @pytest.fixture(scope="session")
