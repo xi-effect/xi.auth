@@ -13,13 +13,15 @@ from app.utils.authorization import (
     add_session_to_response,
     remove_session_from_response,
 )
+from app.utils.magic import include_responses
+from app.utils.users import UsernameResponses
 
 router = APIRouter(tags=["reglog"])
 
 
+@include_responses(UsernameResponses)
 class SignupResponses(Responses):
     EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
-    USERNAME_IN_USE = (HTTP_409_CONFLICT, "Username already in use")
 
 
 @router.post(
@@ -33,7 +35,7 @@ async def signup(
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
         raise SignupResponses.EMAIL_IN_USE.value
     if await User.find_first_by_kwargs(username=user_data.username) is not None:
-        raise SignupResponses.USERNAME_IN_USE.value
+        raise UsernameResponses.USERNAME_IN_USE.value
 
     user = await User.create(**user_data.model_dump())
 
