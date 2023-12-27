@@ -1,4 +1,4 @@
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Self
 
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
 from pydantic import AfterValidator, Field
@@ -7,6 +7,7 @@ from sqlalchemy import Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.common.config import Base
+from app.common.sqla import db
 
 
 class User(Base):
@@ -19,8 +20,11 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(100))
-    username: Mapped[str] = mapped_column(String(30))
     password: Mapped[str] = mapped_column(String(100))
+
+    username: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    display_name: Mapped[str | None] = mapped_column(String(100))
+    theme: Mapped[str] = mapped_column(String(10), default="system")
 
     __table_args__ = (
         Index("hash_index_users_username", username, postgresql_using="hash"),
@@ -33,15 +37,29 @@ class User(Base):
 
     InputModel = MappedModel.create(
         columns=[
-            (username, Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,30}")]),
+            (username, Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,100}")]),
             email,  # TODO (email, Annotated[str, AfterValidator(email_validator)]),
             (password, PasswordType),
         ]
     )
-    PatchModel = InputModel.as_patch()
+    InputPatchModel = InputModel.as_patch()
     CredentialsModel = MappedModel.create(columns=[email, password])
-    ProfileModel = MappedModel.create(columns=[id, username])
-    FullModel = ProfileModel.extend(columns=[email])
+    ProfileModel = MappedModel.create(
+        columns=[
+            (username, Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,100}")]),
+            display_name,
+        ]
+    )
+    ProfilePatchModel = ProfileModel.as_patch()
+    ThemeModel = MappedModel.create(columns=[theme]).as_patch()
+    CurrentThemeModel = ThemeModel.extend(columns=[id])
+    FullModel = ProfileModel.extend(columns=[id, email])
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)
+
+    async def username_verify(self, username: str | None) -> Self | None:
+        if username is None:
+            return None
+        stmt = User.select_by_kwargs(username=username).filter(User.id != self.id)
+        return await db.get_first(stmt)

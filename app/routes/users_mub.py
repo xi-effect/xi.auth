@@ -38,7 +38,7 @@ async def retrieve_user(user_id: int) -> User:
     response_model=User.FullModel,
     responses=UserResponses.responses(),
 )
-async def update_user(user_id: int, user_data: User.PatchModel) -> User:
+async def update_user(user_id: int, user_data: User.InputPatchModel) -> User:
     user = await User.find_first_by_id(user_id)
     if user is None:
         raise UserResponses.USER_NOT_FOUND.value
