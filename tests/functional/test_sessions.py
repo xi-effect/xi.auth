@@ -19,8 +19,7 @@ def session_checker(session: Session, invalid: bool = False) -> TypeChecker:
     }
 
 
-@pytest.mark.anyio()
-async def test_getting_current_session(
+def test_getting_current_session(
     authorized_client: TestClient,
     session: Session,
 ) -> None:
@@ -30,8 +29,7 @@ async def test_getting_current_session(
     )
 
 
-@pytest.mark.anyio()
-async def test_disable_current_session(
+def test_disable_current_session(
     authorized_client: TestClient,
     session: Session,
 ) -> None:
@@ -81,8 +79,7 @@ async def deleted_session_id(
     return session.id
 
 
-@pytest.mark.anyio()
-async def test_non_existent_session_fails(
+def test_non_existent_session_fails(
     authorized_client: TestClient, deleted_session_id: int
 ) -> None:
     assert_response(
@@ -92,7 +89,6 @@ async def test_non_existent_session_fails(
     )
 
 
-@pytest.mark.anyio()
 @pytest.mark.parametrize(
     ("use_headers", "error"),
     [
@@ -109,7 +105,7 @@ async def test_non_existent_session_fails(
         pytest.param("DELETE", "/api/sessions/{session_id}/", id="disable_session"),
     ],
 )
-async def test_authorization_fails(
+def test_authorization_fails(
     client: TestClient,
     session: Session,
     invalid_token: str,
@@ -126,8 +122,7 @@ async def test_authorization_fails(
     )
 
 
-@pytest.mark.anyio()
-async def test_foreign_user_fails(other_client: TestClient, session: Session) -> None:
+def test_foreign_user_fails(other_client: TestClient, session: Session) -> None:
     assert_response(
         other_client.delete(f"/api/sessions/{session.id}/"),
         expected_code=404,
