@@ -26,6 +26,7 @@ async def test_creation(
         await user.delete()
 
 
+@pytest.mark.anyio()
 @pytest.mark.parametrize(
     ("data_mod", "error"),
     [
@@ -33,7 +34,7 @@ async def test_creation(
         pytest.param({"username": "new_one"}, "Email already in use", id="email"),
     ],
 )
-def test_creation_conflict(
+async def test_creation_conflict(
     client: TestClient,
     user_data: dict[str, Any],
     user: User,
@@ -47,18 +48,22 @@ def test_creation_conflict(
     )
 
 
-def test_getting(client: TestClient, user: User, user_data: dict[str, Any]) -> None:
+@pytest.mark.anyio()
+async def test_getting(
+    client: TestClient, user: User, user_data: dict[str, Any]
+) -> None:
     assert_response(
         client.get(f"/mub/users/{user.id}/"),
         expected_json={**user_data, "id": user.id, "password": None},
     )
 
 
+@pytest.mark.anyio()
 @pytest.mark.parametrize("pass_email", [False, True], ids=["no_email", "with_email"])
 @pytest.mark.parametrize(
     "pass_password", [False, True], ids=["no_password", "with_password"]
 )
-def test_updating(
+async def test_updating(
     faker: Faker,
     client: TestClient,
     user_data: dict[str, Any],
@@ -78,7 +83,8 @@ def test_updating(
     )
 
 
-def test_deleting(client: TestClient, user: User) -> None:
+@pytest.mark.anyio()
+async def test_deleting(client: TestClient, user: User) -> None:
     assert_nodata_response(client.delete(f"/mub/users/{user.id}/"))
 
 

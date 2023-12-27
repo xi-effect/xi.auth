@@ -15,6 +15,7 @@ from tests.mock_stack import MockStack
 days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_length).days
 
 
+@pytest.mark.anyio()
 @pytest.mark.parametrize(
     ("active_for", "expected"),
     [
@@ -23,7 +24,7 @@ days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_lengt
         if days != days_to_renew
     ],
 )
-def test_renewal_required_detection(
+async def test_renewal_required_detection(
     session: Session,
     mock_stack: MockStack,
     active_for: int,
