@@ -8,21 +8,32 @@ class Responses(HTTPException, Enum):
     value: HTTPException
 
     @classmethod
-    def responses(cls) -> dict[str | int, dict[str, Any]]:
+    def responses(
+        cls,
+        *,
+        keys: list[str] | None = None,
+    ) -> dict[str | int, dict[str, Any]]:
         result: dict[str | int, dict[str, Any]] = {}
         code_counts: dict[int, int] = {}
-        for response in cls.__members__.values():
-            error = response.value
-            code_counts[error.status_code] = code_counts.get(error.status_code, -1) + 1
+        for key, response in cls.__members__.items():
+            if keys is None or key in keys:
+                error = response.value
+                code_counts[error.status_code] = (
+                    code_counts.get(error.status_code, -1) + 1
+                )
 
-            status_code = str(error.status_code) + " " * code_counts[error.status_code]
-            result[status_code] = {
-                "description": error.detail,
-                "content": {
-                    "application/json": {
-                        "schema": {"properties": {"detail": {"const": error.detail}}},
-                        "example": {"detail": error.detail},
-                    }
-                },
-            }
+                status_code = (
+                    str(error.status_code) + " " * code_counts[error.status_code]
+                )
+                result[status_code] = {
+                    "description": error.detail,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {"detail": {"const": error.detail}}
+                            },
+                            "example": {"detail": error.detail},
+                        }
+                    },
+                }
         return result
