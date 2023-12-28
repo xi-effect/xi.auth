@@ -93,6 +93,7 @@ omit = [
   "alembic/*",
   "test/*",
   "app/common/sqla.py",
+  "app/setup_ci.py",
 ]
 
 [build-system]

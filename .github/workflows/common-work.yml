@@ -97,6 +97,12 @@ jobs:
           source .venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
+      - name: Setup database for migrationless tests
+        if: '!inputs.database'
+        run: |
+          source .venv/bin/activate
+          python -m app.setup_ci
+
       - name: Upgrade database to latest migration
         if: inputs.database
         run: alembic upgrade head
@@ -114,7 +120,7 @@ jobs:
       - name: Run pytest
         run: pytest tests -p no:cacheprovider --cov=app ${{ !inputs.coverage && '--cov-fail-under=0' || ''}}
         env:
-          DATABASE_MIGRATED: ${{ inputs.database && '1' || '0' }}
+          DATABASE_MIGRATED: '1'
 
       - name: Run pre-commit for all files
         if: success() || (failure() && steps.venv.conclusion == 'success')
