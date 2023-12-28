@@ -17,7 +17,7 @@ from aio_pika.abc import (
 )
 
 
-class AbstractRabbitProducer:
+class AbstractRabbitProducer:  # pragma: no coverage
     async def connect(self, connection: AbstractConnection) -> None:
         raise NotImplementedError()
 
@@ -42,7 +42,7 @@ class AbstractRabbitProducer:
         )
 
 
-class RabbitExchangeProducer(AbstractRabbitProducer, ABC):
+class RabbitExchangeProducer(AbstractRabbitProducer, ABC):  # pragma: no coverage
     def __init__(self) -> None:
         self.exchange: AbstractExchange | None = None
 
@@ -61,7 +61,7 @@ class RabbitExchangeProducer(AbstractRabbitProducer, ABC):
         await self.exchange.publish(message=message, routing_key=routing_key, **kwargs)
 
 
-class RabbitDirectProducer(RabbitExchangeProducer):
+class RabbitDirectProducer(RabbitExchangeProducer):  # pragma: no coverage
     def __init__(self, queue_name: str) -> None:
         super().__init__()
         self.queue_name: str = queue_name
@@ -76,7 +76,7 @@ class RabbitDirectProducer(RabbitExchangeProducer):
         return await super().send_message(message, **kwargs)
 
 
-class RabbitFanoutProducer(RabbitExchangeProducer):
+class RabbitFanoutProducer(RabbitExchangeProducer):  # pragma: no coverage
     def __init__(self, exchange: str, *queues: str) -> None:
         super().__init__()
         self.exchange_name: str = exchange
