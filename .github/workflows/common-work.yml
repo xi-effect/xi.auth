@@ -23,9 +23,9 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DB_LINK: "postgresql+asyncpg://test:test@localhost:5432/test"
-      DB_SCHEMA: "xi_auth"
-      MQ_URL: "amqp://guest:guest@localhost/"
+      DB_LINK: 'postgresql+asyncpg://test:test@localhost:5432/test'
+      DB_SCHEMA: ${{ inputs.database && 'xi_auth' || '' }}
+      MQ_URL: 'amqp://guest:guest@localhost/'
 
     services:
       mq:
@@ -104,7 +104,7 @@ jobs:
       - name: Check that database is up to date with code
         if: inputs.database
         run: |
-          alembic revision --autogenerate -m "test" --rev-id 0
+          alembic revision --autogenerate -m 'test' --rev-id 0
           lines=$(cat ./alembic/versions/0_test.py | wc -l)
           echo $lines
           if [ $lines -ne 30 ]; then
