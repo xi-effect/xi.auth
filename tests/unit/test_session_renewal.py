@@ -10,7 +10,7 @@ from app.models.users_db import User
 from app.utils.authorization import authorize_user
 from tests.conftest import ActiveSession
 from tests.functional.test_reglog import assert_session_cookie
-from tests.unit.conftest import MockStack
+from tests.mock_stack import MockStack
 
 days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_length).days
 

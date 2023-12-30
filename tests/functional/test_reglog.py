@@ -9,11 +9,12 @@ from pydantic_marshals.contains import UnorderedLiteralCollection, assert_contai
 from starlette import responses
 from starlette.testclient import TestClient
 
-from app.common.config import COOKIE_DOMAIN
+from app.common.config import COOKIE_DOMAIN, pochta_producer
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
 from tests.conftest import ActiveSession
+from tests.mock_stack import MockStack
 from tests.utils import PytestRequest, assert_nodata_response, assert_response
 
 
@@ -61,17 +62,22 @@ def is_cross_site(request: PytestRequest[bool]) -> bool:
 
 @pytest.mark.anyio()
 async def test_signup(
+    mock_stack: MockStack,
     client: TestClient,
     active_session: ActiveSession,
     user_data: dict[str, Any],
     is_cross_site: bool,
 ) -> None:
+    pochta_mock = mock_stack.enter_async_mock(pochta_producer, "send_message")
+
     headers = {"X-Testing": "true"} if is_cross_site else {}
     response = assert_response(
         client.post("/api/signup/", json=user_data, headers=headers),
         expected_json={**user_data, "id": int, "password": None},
         expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
     )
+
+    pochta_mock.assert_called_once()
 
     async with active_session():
         await assert_session_cookie(response, cross_site=is_cross_site)
