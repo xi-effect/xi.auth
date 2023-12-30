@@ -1,16 +1,19 @@
+from asyncio import AbstractEventLoop, get_running_loop
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
+from aio_pika import connect_robust
 from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.responses import Response
 
 from app.common.config import (
-    DATABASE_RESET,
-    DB_URL,
+    DATABASE_MIGRATED,
+    MQ_URL,
     PRODUCTION_MODE,
     Base,
     engine,
+    pochta_producer,
     sessionmaker,
 )
 from app.common.sqla import session_context
@@ -20,14 +23,17 @@ from app.utils.cors import CorrectCORSMiddleware
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    if not PRODUCTION_MODE:
+    if not PRODUCTION_MODE and not DATABASE_MIGRATED:
         async with engine.begin() as conn:
-            if DB_URL.endswith("app.db") or DATABASE_RESET:
-                await conn.run_sync(Base.metadata.drop_all)
-            if not DB_URL.startswith("postgresql") or DATABASE_RESET:
-                await conn.run_sync(Base.metadata.create_all)
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.run_sync(Base.metadata.create_all)
+
+    loop: AbstractEventLoop = get_running_loop()
+    connection = await connect_robust(MQ_URL, loop=loop)
+    await pochta_producer.connect(connection)
 
     yield
+    await connection.close()
 
 
 app = FastAPI(lifespan=lifespan)

@@ -23,13 +23,19 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DB_LINK: ${{ inputs.database && 'postgresql+asyncpg://test:test@localhost:5432/test' || 'sqlite+aiosqlite:///app.db' }}
+      DB_LINK: 'postgresql+asyncpg://test:test@localhost:5432/test'
       DB_SCHEMA: ${{ inputs.database && 'xi_auth' || '' }}
+      MQ_URL: 'amqp://guest:guest@localhost/'
 
     services:
+      mq:
+        image: rabbitmq:3.12.10-management-alpine
+        ports:
+          - 5672:5672
       db:
-        image: postgres:14-alpine
+        image: postgres:16.1-alpine
         env:
+          PGUSER: test
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
           POSTGRES_DB: test
@@ -91,6 +97,12 @@ jobs:
           source .venv/bin/activate
           echo PATH=$PATH >> $GITHUB_ENV
 
+      - name: Setup database for migrationless tests
+        if: '!inputs.database'
+        run: |
+          source .venv/bin/activate
+          python -m app.setup_ci
+
       - name: Upgrade database to latest migration
         if: inputs.database
         run: alembic upgrade head
@@ -98,7 +110,7 @@ jobs:
       - name: Check that database is up to date with code
         if: inputs.database
         run: |
-          alembic revision --autogenerate -m "test" --rev-id 0
+          alembic revision --autogenerate -m 'test' --rev-id 0
           lines=$(cat ./alembic/versions/0_test.py | wc -l)
           echo $lines
           if [ $lines -ne 30 ]; then
@@ -107,6 +119,8 @@ jobs:
 
       - name: Run pytest
         run: pytest tests -p no:cacheprovider --cov=app ${{ !inputs.coverage && '--cov-fail-under=0' || ''}}
+        env:
+          DATABASE_MIGRATED: '1'
 
       - name: Run pre-commit for all files
         if: success() || (failure() && steps.venv.conclusion == 'success')
