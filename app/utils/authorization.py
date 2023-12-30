@@ -2,7 +2,8 @@ from datetime import timezone
 from typing import Annotated, Final
 
 from fastapi import Depends, Response
-from fastapi.params import Cookie, Header
+from fastapi.params import Header
+from fastapi.security import APIKeyCookie, APIKeyHeader
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.common.config import COOKIE_DOMAIN
@@ -10,14 +11,20 @@ from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User
 
-AUTH_HEADER: Final[str] = "X-XI-ID"
-TEST_HEADER: Final[str] = "X-Testing"
-AUTH_COOKIE: Final[str] = "xi_id_token"
+AUTH_HEADER_NAME: Final[str] = "X-XI-ID"
+AUTH_COOKIE_NAME: Final[str] = "xi_id_token"
+TEST_HEADER_NAME: Final[str] = "X-Testing"
+
+header_auth_scheme = APIKeyHeader(name=AUTH_HEADER_NAME, auto_error=False)
+AuthHeader = Annotated[str | None, Depends(header_auth_scheme)]
+
+cookie_auth_scheme = APIKeyCookie(name=AUTH_COOKIE_NAME, auto_error=False)
+AuthCookie = Annotated[str | None, Depends(cookie_auth_scheme)]
 
 
 def add_session_to_response(response: Response, session: Session) -> None:
     response.set_cookie(
-        AUTH_COOKIE,
+        AUTH_COOKIE_NAME,
         session.token,
         expires=session.expiry.astimezone(timezone.utc),
         domain=COOKIE_DOMAIN,
@@ -28,17 +35,17 @@ def add_session_to_response(response: Response, session: Session) -> None:
 
 
 def remove_session_from_response(response: Response) -> None:
-    response.delete_cookie(AUTH_COOKIE, domain=COOKIE_DOMAIN)
+    response.delete_cookie(AUTH_COOKIE_NAME, domain=COOKIE_DOMAIN)
 
 
 class AuthorizedResponses(Responses):
-    HEADER_MISSING = (HTTP_401_UNAUTHORIZED, "Authorization cookie is missing")
+    HEADER_MISSING = (HTTP_401_UNAUTHORIZED, "Authorization is missing")
     INVALID_SESSION = (HTTP_401_UNAUTHORIZED, "Session is invalid")
 
 
 async def authorize_session(
-    header_token: Annotated[str | None, Header(alias=AUTH_HEADER)] = None,
-    cookie_token: Annotated[str | None, Cookie(alias=AUTH_COOKIE)] = None,
+    header_token: AuthHeader = None,
+    cookie_token: AuthCookie = None,
 ) -> Session:
     token = cookie_token or header_token
     if token is None:
@@ -54,7 +61,9 @@ async def authorize_session(
 AuthorizedSession = Annotated[Session, Depends(authorize_session)]
 
 
-def is_cross_site_mode(testing: Annotated[str, Header(alias=TEST_HEADER)] = "") -> bool:
+def is_cross_site_mode(
+    testing: Annotated[str, Header(alias=TEST_HEADER_NAME)] = ""
+) -> bool:
     return testing == "true"
 
 

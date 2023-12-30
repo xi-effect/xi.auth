@@ -12,7 +12,7 @@ from starlette.testclient import TestClient
 from app.common.config import COOKIE_DOMAIN
 from app.models.sessions_db import Session
 from app.models.users_db import User
-from app.utils.authorization import AUTH_COOKIE, AUTH_HEADER
+from app.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
 from tests.conftest import ActiveSession
 from tests.utils import PytestRequest, assert_nodata_response, assert_response
 
@@ -51,7 +51,7 @@ async def assert_session_cookie(
     )
 
 
-COOKIE_REGEX = f"{AUTH_COOKIE}=(.*)"
+COOKIE_REGEX = f"{AUTH_COOKIE_NAME}=(.*)"
 
 
 @pytest.fixture(params=[False, True], ids=["same_site", "cross_site"])
@@ -164,15 +164,15 @@ def test_no_auth_header(client: TestClient) -> None:
     assert_response(
         client.post("/api/signout/"),
         expected_code=401,
-        expected_json={"detail": "Authorization cookie is missing"},
+        expected_json={"detail": "Authorization is missing"},
     )
 
 
 def test_invalid_session(
     client: TestClient, invalid_token: str, use_cookie_auth: bool
 ) -> None:
-    cookies = {AUTH_COOKIE: invalid_token} if use_cookie_auth else {}
-    headers = {} if use_cookie_auth else {AUTH_HEADER: invalid_token}
+    cookies = {AUTH_COOKIE_NAME: invalid_token} if use_cookie_auth else {}
+    headers = {} if use_cookie_auth else {AUTH_HEADER_NAME: invalid_token}
     assert_response(
         client.post("/api/signout/", cookies=cookies, headers=headers),
         expected_code=401,
