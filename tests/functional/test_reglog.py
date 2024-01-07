@@ -132,6 +132,7 @@ async def test_signin(
         await assert_session_cookie(response, cross_site=is_cross_site)
 
 
+@pytest.mark.anyio()
 @pytest.mark.usefixtures("user")
 @pytest.mark.parametrize(
     ("altered_key", "error"),
@@ -140,7 +141,7 @@ async def test_signin(
         pytest.param("password", "Wrong password", id="wrong_password"),
     ],
 )
-def test_signin_errors(
+async def test_signin_errors(
     client: TestClient,
     user_data: dict[str, Any],
     altered_key: str,
@@ -174,7 +175,8 @@ def test_no_auth_header(client: TestClient) -> None:
     )
 
 
-def test_invalid_session(
+@pytest.mark.anyio()
+async def test_invalid_session(
     client: TestClient, invalid_token: str, use_cookie_auth: bool
 ) -> None:
     cookies = {AUTH_COOKIE_NAME: invalid_token} if use_cookie_auth else {}

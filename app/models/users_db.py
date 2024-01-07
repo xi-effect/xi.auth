@@ -21,6 +21,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(100))
     username: Mapped[str] = mapped_column(String(30))
     password: Mapped[str] = mapped_column(String(100))
+    display_name: Mapped[str | None] = mapped_column(String(30))
+    theme: Mapped[str] = mapped_column(String(10), default="system")
 
     __table_args__ = (
         Index("hash_index_users_username", username, postgresql_using="hash"),
@@ -30,18 +32,22 @@ class User(Base):
     PasswordType = Annotated[
         str, Field(min_length=6, max_length=100), AfterValidator(generate_hash)
     ]
+    UsernameType = Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,30}")]
 
     InputModel = MappedModel.create(
         columns=[
-            (username, Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,30}")]),
+            (username, UsernameType),
             email,  # TODO (email, Annotated[str, AfterValidator(email_validator)]),
             (password, PasswordType),
         ]
     )
-    PatchModel = InputModel.as_patch()
     CredentialsModel = MappedModel.create(columns=[email, password])
-    ProfileModel = MappedModel.create(columns=[id, username])
-    FullModel = ProfileModel.extend(columns=[email])
+    ProfileModel = MappedModel.create(
+        columns=[(username, UsernameType), display_name, theme]
+    )
+    ProfilePatchModel = ProfileModel.as_patch()
+    FullModel = ProfileModel.extend(columns=[id, email])
+    FullPatchModel = InputModel.extend(columns=[display_name, theme]).as_patch()
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)
