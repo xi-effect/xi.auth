@@ -6,7 +6,7 @@ import pytest
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from tests.conftest import ActiveSession, Factory
-from tests.unit.conftest import MockStack
+from tests.mock_stack import MockStack
 
 
 @pytest.mark.anyio()

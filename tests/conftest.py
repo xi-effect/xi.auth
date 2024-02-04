@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol, TypeVar
 
@@ -11,13 +11,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.config import sessionmaker
 from app.common.sqla import session_context
-from app.main import app, lifespan
+from app.main import app
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
+from tests.mock_stack import MockStack
 from tests.utils import PytestRequest
 
 pytest_plugins = ("anyio",)
+
+
+@pytest.fixture()
+def mock_stack() -> Iterator[MockStack]:
+    with MockStack() as stack:
+        yield stack
 
 
 @pytest.fixture(scope="session")
@@ -47,21 +54,16 @@ def active_session() -> ActiveSession:
 
 
 @pytest.fixture(autouse=True)
-async def _activate_lifespan() -> AsyncIterator[None]:
-    async with lifespan(app):
-        yield
-
-
-@pytest.fixture(autouse=True)
 async def _reset_database(active_session: ActiveSession) -> AsyncIterator[None]:
     async with active_session() as session:
         yield
         await session.execute(delete(User))
 
 
-@pytest.fixture()
-def client() -> TestClient:
-    return TestClient(app)
+@pytest.fixture(scope="session")
+def client() -> Iterator[TestClient]:
+    with TestClient(app) as client:
+        yield client
 
 
 @pytest.fixture()
@@ -130,11 +132,31 @@ def use_cookie_auth(request: PytestRequest[bool]) -> bool:
     return request.param
 
 
+@pytest.fixture(scope="session")
+def authorized_client_base() -> Iterator[TestClient]:
+    with TestClient(app) as client:
+        yield client
+
+
 @pytest.fixture()
-def authorized_client(session_token: str, use_cookie_auth: bool) -> TestClient:
+def authorized_client(
+    authorized_client_base: TestClient,
+    session_token: str,
+    use_cookie_auth: bool,
+) -> Iterator[TestClient]:
+    # property setter allows it, but mypy doesn't get it
     if use_cookie_auth:
-        return TestClient(app, cookies={AUTH_COOKIE_NAME: session_token})
-    return TestClient(app, headers={AUTH_HEADER_NAME: session_token})
+        authorized_client_base.cookies = {  # type: ignore[assignment]
+            AUTH_COOKIE_NAME: session_token
+        }
+        yield authorized_client_base
+        authorized_client_base.cookies = {}  # type: ignore[assignment]
+    else:
+        authorized_client_base.headers = {  # type: ignore[assignment]
+            AUTH_HEADER_NAME: session_token
+        }
+        yield authorized_client_base
+        authorized_client_base.headers = {}  # type: ignore[assignment]
 
 
 @pytest.fixture()
@@ -148,9 +170,19 @@ def other_session_token(other_session: Session) -> str:
     return other_session.token
 
 
+@pytest.fixture(scope="session")
+def other_client_base() -> Iterator[TestClient]:
+    with TestClient(app) as client:
+        yield client
+
+
 @pytest.fixture()
-def other_client(other_session_token: str) -> TestClient:
-    return TestClient(app, cookies={AUTH_COOKIE_NAME: other_session_token})
+def other_client(other_client_base: TestClient, other_session_token: str) -> TestClient:
+    # property setter allows it, but mypy doesn't get it
+    other_client_base.cookies = {  # type: ignore[assignment]
+        AUTH_COOKIE_NAME: other_session_token
+    }
+    return other_client_base
 
 
 @pytest.fixture()

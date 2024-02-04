@@ -1,15 +1,14 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-
-from alembic import context
 from sqlalchemy.sql.ddl import CreateSchema
 
-from app.common.config import db_meta
-from app.main import DB_URL
+import app.main  # noqa: F401
+from app.common.config import DB_URL, db_meta
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

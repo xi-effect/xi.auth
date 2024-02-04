@@ -1,6 +1,8 @@
+from aio_pika import Message
 from fastapi import APIRouter, Response
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
+from app.common.config import pochta_producer
 from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User
@@ -11,13 +13,15 @@ from app.utils.authorization import (
     add_session_to_response,
     remove_session_from_response,
 )
+from app.utils.magic import include_responses
+from app.utils.users import UsernameResponses
 
 router = APIRouter(tags=["reglog"])
 
 
+@include_responses(UsernameResponses)
 class SignupResponses(Responses):
     EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
-    USERNAME_IN_USE = (HTTP_409_CONFLICT, "Username already in use")
 
 
 @router.post(
@@ -31,11 +35,13 @@ async def signup(
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
         raise SignupResponses.EMAIL_IN_USE.value
     if await User.find_first_by_kwargs(username=user_data.username) is not None:
-        raise SignupResponses.USERNAME_IN_USE.value
+        raise UsernameResponses.USERNAME_IN_USE.value
 
     user = await User.create(**user_data.model_dump())
 
-    # TODO send email
+    await pochta_producer.send_message(
+        message=Message(f"hi {user_data.email}".encode("utf-8")),
+    )
 
     session = await Session.create(user=user, cross_site=cross_site)
     add_session_to_response(response, session)
