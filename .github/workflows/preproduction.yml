@@ -9,8 +9,6 @@ jobs:
   pull-request:
     runs-on: ubuntu-latest
 
-    environment: staging
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -20,7 +18,7 @@ jobs:
       - name: Create pull request
         uses: devops-infra/action-pull-request@v0.5.1
         with:
-          github_token: ${{ secrets.GH_ACCESS_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           source_branch: staging
           target_branch: main
           title: New Version
