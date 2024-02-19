@@ -38,6 +38,9 @@ db_meta = MetaData(naming_convention=convention, schema=DB_SCHEMA)
 sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
+AVATARS_PATH = "media/avatars/"
+
+
 class Base(AsyncAttrs, DeclarativeBase, MappingBase):
     __tablename__: str
     __abstract__: bool

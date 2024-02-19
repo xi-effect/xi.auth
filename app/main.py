@@ -17,7 +17,14 @@ from app.common.config import (
     sessionmaker,
 )
 from app.common.sqla import session_context
-from app.routes import current_user_rst, proxy_rst, reglog_rst, sessions_rst, users_mub
+from app.routes import (
+    avatar_rst,
+    current_user_rst,
+    proxy_rst,
+    reglog_rst,
+    sessions_rst,
+    users_mub,
+)
 from app.utils.cors import CorrectCORSMiddleware
 
 
@@ -50,6 +57,7 @@ app.add_middleware(
 app.include_router(reglog_rst.router, prefix="/api")
 app.include_router(current_user_rst.router, prefix="/api/users/current")
 app.include_router(sessions_rst.router, prefix="/api/sessions")
+app.include_router(avatar_rst.router, prefix="/api/users/image")
 
 # MUB
 app.include_router(users_mub.router, prefix="/mub/users")
