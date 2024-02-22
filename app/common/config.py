@@ -10,6 +10,8 @@ from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
 
+AVATARS_PATH: Path = current_directory / "avatars"
+
 COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
 DATABASE_MIGRATED: bool = getenv("DATABASE_MIGRATED", "0") == "1"
@@ -36,9 +38,6 @@ engine = create_async_engine(
 )
 db_meta = MetaData(naming_convention=convention, schema=DB_SCHEMA)
 sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False)
-
-
-AVATARS_PATH = "media/avatars/"
 
 
 class Base(AsyncAttrs, DeclarativeBase, MappingBase):

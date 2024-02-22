@@ -8,6 +8,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from app.common.config import (
+    AVATARS_PATH,
     DATABASE_MIGRATED,
     MQ_URL,
     PRODUCTION_MODE,
@@ -38,6 +39,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     loop: AbstractEventLoop = get_running_loop()
     connection = await connect_robust(MQ_URL, loop=loop)
     await pochta_producer.connect(connection)
+    AVATARS_PATH.mkdir(exist_ok=True)
 
     yield
     await connection.close()
@@ -57,7 +59,7 @@ app.add_middleware(
 app.include_router(reglog_rst.router, prefix="/api")
 app.include_router(current_user_rst.router, prefix="/api/users/current")
 app.include_router(sessions_rst.router, prefix="/api/sessions")
-app.include_router(avatar_rst.router, prefix="/api/users/image")
+app.include_router(avatar_rst.router, prefix="/api/users/current/avatar")
 
 # MUB
 app.include_router(users_mub.router, prefix="/mub/users")

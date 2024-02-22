@@ -1,23 +1,13 @@
+from pathlib import Path
 from typing import Annotated, ClassVar
 
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
 from pydantic import AfterValidator, Field
 from pydantic_marshals.sqlalchemy import MappedModel
-from sqlalchemy import ForeignKey, Index, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Index, String
+from sqlalchemy.orm import Mapped, mapped_column
 
-from app.common.config import Base
-
-
-class Avatar(Base):
-    __tablename__ = "avatars"
-    not_found_text: ClassVar[str] = "Avatar not found"
-
-    id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
-    user: Mapped["User"] = relationship()
-    URL: Mapped[str] = mapped_column(nullable=True, default=None)
-
-    OutputModel = MappedModel.create(columns=[id, URL])
+from app.common.config import AVATARS_PATH, Base
 
 
 class User(Base):
@@ -62,3 +52,7 @@ class User(Base):
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)
+
+    @property
+    def avatar_path(self) -> Path:
+        return AVATARS_PATH / f"{self.id}.webp"

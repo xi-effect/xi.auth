@@ -1,29 +1,33 @@
-from fastapi import APIRouter, UploadFile
+from typing import Annotated
+
+import filetype  # type: ignore[import-untyped]
+from fastapi import APIRouter, File, UploadFile
+from filetype.types.image import Webp  # type: ignore[import-untyped]
 
 from app.common.responses import Responses
-from app.models.users_db import Avatar
-from app.services.avatar_service import AvatarResponses, AvatarService
-from app.utils.authorization import AuthorizedUser
+from app.utils.authorization import AuthorizedResponses, AuthorizedUser
+from app.utils.magic import include_responses
 
-router = APIRouter(tags=["avatar_actions"])
-
-
-@router.put("/update", status_code=201, responses=AvatarResponses.responses())
-async def update_or_create_avatar(user: AuthorizedUser, file: UploadFile) -> None:
-    await AvatarService.create_or_update(user.id, file)
+router = APIRouter(tags=["current user avatar"])
 
 
-class AvatarRD(Responses):
-    NOT_FOUND = (404, "Avatar not found")
+@include_responses(AuthorizedResponses)
+class AvatarResponses(Responses):
+    WRONG_FORMAT = (415, "Invalid image format")
 
 
-@router.get(
-    "/get", response_model=AvatarService.response_model, responses=AvatarRD.responses()
-)
-async def get_avatar(user: AuthorizedUser) -> Avatar:
-    return await AvatarService.get(user.id)
+@router.put("/", status_code=204, responses=AvatarResponses.responses())
+async def update_or_create_avatar(
+    user: AuthorizedUser,
+    avatar: Annotated[UploadFile, File(description="image/webp")],
+) -> None:
+    if not filetype.match(avatar.file, [Webp()]):
+        raise AvatarResponses.WRONG_FORMAT.value
+
+    with user.avatar_path.open("wb") as file:
+        file.write(await avatar.read())
 
 
-@router.delete("/delete", responses=AvatarRD.responses())
+@router.delete("/", responses=AuthorizedResponses.responses(), status_code=204)
 async def delete_avatar(user: AuthorizedUser) -> None:
-    await AvatarService.delete(user.id)
+    user.avatar_path.unlink(missing_ok=True)
