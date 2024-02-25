@@ -5,6 +5,7 @@ from typing import Any, Protocol, TypeVar
 import pytest
 from faker import Faker
 from faker.providers import internet
+from faker_file.providers import webp_file  # type: ignore[import-untyped]
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,6 +36,7 @@ def anyio_backend() -> str:
 @pytest.fixture(autouse=True)
 def _setup_faker(faker: Faker) -> None:
     faker.add_provider(internet)
+    faker.add_provider(webp_file.GraphicWebpFileProvider)
 
 
 class ActiveSession(Protocol):

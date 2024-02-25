@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Annotated, ClassVar
 
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
@@ -6,7 +7,7 @@ from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.common.config import Base
+from app.common.config import AVATARS_PATH, Base
 
 
 class User(Base):
@@ -51,3 +52,7 @@ class User(Base):
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)
+
+    @property
+    def avatar_path(self) -> Path:
+        return AVATARS_PATH / f"{self.id}.webp"

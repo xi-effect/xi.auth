@@ -10,6 +10,8 @@ from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
 
+AVATARS_PATH: Path = current_directory / "avatars"
+
 COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
 DATABASE_MIGRATED: bool = getenv("DATABASE_MIGRATED", "0") == "1"
