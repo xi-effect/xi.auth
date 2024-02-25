@@ -3,7 +3,7 @@
 default_language_version:
   python: python3.11
 
-exclude: ^alembic/env.py$
+exclude: ^alembic/
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
