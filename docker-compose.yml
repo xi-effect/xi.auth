@@ -65,7 +65,7 @@ services:
       mq:
         condition: service_healthy
       db:
-        condition: service_started
+        condition: service_healthy
     build:
       context: .
       dockerfile: Dockerfile
@@ -80,5 +80,6 @@ services:
     environment:
       WATCHFILES_FORCE_POLLING: true
       DB_LINK: postgresql+asyncpg://test:test@db:5432/test
+      MQ_URL: amqp://guest:guest@mq
       DB_SCHEMA: xi_auth
       # DATABASE_MIGRATED: "1"
