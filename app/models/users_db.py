@@ -1,13 +1,22 @@
+import enum
 from pathlib import Path
 from typing import Annotated, ClassVar
 
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
 from pydantic import AfterValidator, Field
 from pydantic_marshals.sqlalchemy import MappedModel
-from sqlalchemy import Index, String
+from sqlalchemy import Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.common.config import AVATARS_PATH, Base
+
+
+class OnboardingStage(str, enum.Enum):
+    CREATED = "created"
+    COMMUNITY_CHOICE = "community-choice"
+    COMMUNITY_CREATE = "community-create"
+    COMMUNITY_INVITE = "community-invite"
+    COMPLETED = "completed"
 
 
 class User(Base):
@@ -23,6 +32,9 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(30))
     password: Mapped[str] = mapped_column(String(100))
     display_name: Mapped[str | None] = mapped_column(String(30))
+    onboarding_stage: Mapped[OnboardingStage] = mapped_column(
+        Enum(OnboardingStage), default=OnboardingStage.CREATED
+    )
     theme: Mapped[str] = mapped_column(String(10), default="system")
 
     __table_args__ = (
@@ -47,8 +59,10 @@ class User(Base):
         columns=[(username, UsernameType), display_name, theme]
     )
     ProfilePatchModel = ProfileModel.as_patch()
-    FullModel = ProfileModel.extend(columns=[id, email])
-    FullPatchModel = InputModel.extend(columns=[display_name, theme]).as_patch()
+    FullModel = ProfileModel.extend(columns=[id, email, onboarding_stage])
+    FullPatchModel = InputModel.extend(
+        columns=[display_name, theme, onboarding_stage]
+    ).as_patch()
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)

@@ -3,6 +3,8 @@ from typing import Generic, TypeVar
 from httpx import Response
 from pydantic_marshals.contains import TypeChecker, assert_contains
 
+from app.models.users_db import User
+
 
 def assert_nodata_response(
     response: Response,
@@ -56,3 +58,9 @@ class PytestRequest(Generic[T]):
     @property
     def param(self) -> T:
         raise NotImplementedError
+
+
+async def get_db_user(user: User) -> User:
+    db_user = await User.find_first_by_id(user.id)
+    assert db_user is not None
+    return db_user
