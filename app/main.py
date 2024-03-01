@@ -21,6 +21,7 @@ from app.common.sqla import session_context
 from app.routes import (
     avatar_rst,
     current_user_rst,
+    forms_rst,
     onboarding_rst,
     proxy_rst,
     reglog_rst,
@@ -64,6 +65,7 @@ app.include_router(users_rst.router, prefix="/api/users")
 app.include_router(current_user_rst.router, prefix="/api/users/current")
 app.include_router(avatar_rst.router, prefix="/api/users/current/avatar")
 app.include_router(sessions_rst.router, prefix="/api/sessions")
+app.include_router(forms_rst.router, prefix="/api")
 
 # MUB
 app.include_router(users_mub.router, prefix="/mub/users")
