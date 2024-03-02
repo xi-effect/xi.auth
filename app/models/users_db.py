@@ -55,6 +55,9 @@ class User(Base):
         ]
     )
     CredentialsModel = MappedModel.create(columns=[email, password])
+    UserProfileModel = MappedModel.create(
+        columns=[id, (username, UsernameType), display_name]
+    )
     ProfileModel = MappedModel.create(
         columns=[(username, UsernameType), display_name, theme]
     )
