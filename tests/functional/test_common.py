@@ -4,14 +4,14 @@ from starlette.testclient import TestClient
 from tests.utils import assert_nodata_response
 
 
-def test_tailing_stash(client: TestClient) -> None:
+def test_redirecting_on_tailing_stash(client: TestClient) -> None:
     assert_nodata_response(
         client.get("/api/signup", follow_redirects=False),
         expected_code=307,
     )
 
 
-def test_cors(client: TestClient, faker: Faker) -> None:
+def test_setting_cors_headers_options(faker: Faker, client: TestClient) -> None:
     hostname: str = faker.hostname()
     assert_nodata_response(
         client.options(
@@ -24,6 +24,10 @@ def test_cors(client: TestClient, faker: Faker) -> None:
             "access-control-allow-credentials": "true",
         },
     )
+
+
+def test_setting_cors_headers(faker: Faker, client: TestClient) -> None:
+    hostname: str = faker.hostname()
     assert_nodata_response(
         client.post(
             "/api/signup/",

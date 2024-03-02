@@ -32,7 +32,7 @@ async def test_onboarding_unauthorized(
 
 
 @pytest.mark.anyio()
-async def test_proceed_to_community_choice(
+async def test_proceeding_to_community_choice_in_onboarding(
     authorized_client: TestClient,
     active_session: ActiveSession,
     user: User,
@@ -61,7 +61,7 @@ async def test_proceed_to_community_choice(
         (OnboardingStage.COMMUNITY_INVITE, OnboardingStage.COMPLETED),
     ],
 )
-async def test_proceed_to_stages(
+async def test_proceeding_in_onboarding(
     authorized_client: TestClient,
     user: User,
     current_stage: OnboardingStage,
@@ -73,33 +73,6 @@ async def test_proceed_to_stages(
 
     assert_nodata_response(
         authorized_client.put(f"/api/onboarding/stages/{target_stage.value}/")
-    )
-
-    async with active_session():
-        assert (await get_db_user(user)).onboarding_stage is target_stage
-
-
-@pytest.mark.anyio()
-@pytest.mark.parametrize(
-    ("current_stage", "target_stage"),
-    [
-        (OnboardingStage.COMMUNITY_CREATE, OnboardingStage.COMMUNITY_CHOICE),
-        (OnboardingStage.COMMUNITY_INVITE, OnboardingStage.COMMUNITY_CHOICE),
-        (OnboardingStage.COMMUNITY_CHOICE, OnboardingStage.CREATED),
-    ],
-)
-async def test_return_to_stage(
-    authorized_client: TestClient,
-    user: User,
-    current_stage: OnboardingStage,
-    target_stage: OnboardingStage,
-    active_session: ActiveSession,
-) -> None:
-    async with active_session():
-        (await get_db_user(user)).onboarding_stage = current_stage
-
-    assert_nodata_response(
-        authorized_client.delete(f"/api/onboarding/stages/{current_stage.value}/")
     )
 
     async with active_session():
@@ -123,7 +96,7 @@ async def test_return_to_stage(
         (OnboardingStage.COMPLETED, OnboardingStage.COMPLETED),
     ],
 )
-async def test_proceed_to_stage_invalid_transition(
+async def test_proceeding_in_onboarding_invalid_transition(
     authorized_client: TestClient,
     user: User,
     current_stage: OnboardingStage,
@@ -149,6 +122,33 @@ async def test_proceed_to_stage_invalid_transition(
 @pytest.mark.parametrize(
     ("current_stage", "target_stage"),
     [
+        (OnboardingStage.COMMUNITY_CREATE, OnboardingStage.COMMUNITY_CHOICE),
+        (OnboardingStage.COMMUNITY_INVITE, OnboardingStage.COMMUNITY_CHOICE),
+        (OnboardingStage.COMMUNITY_CHOICE, OnboardingStage.CREATED),
+    ],
+)
+async def test_returning_in_onboarding(
+    authorized_client: TestClient,
+    user: User,
+    current_stage: OnboardingStage,
+    target_stage: OnboardingStage,
+    active_session: ActiveSession,
+) -> None:
+    async with active_session():
+        (await get_db_user(user)).onboarding_stage = current_stage
+
+    assert_nodata_response(
+        authorized_client.delete(f"/api/onboarding/stages/{current_stage.value}/")
+    )
+
+    async with active_session():
+        assert (await get_db_user(user)).onboarding_stage is target_stage
+
+
+@pytest.mark.anyio()
+@pytest.mark.parametrize(
+    ("current_stage", "target_stage"),
+    [
         (OnboardingStage.CREATED, OnboardingStage.COMMUNITY_CREATE),
         (OnboardingStage.CREATED, OnboardingStage.COMMUNITY_INVITE),
         (OnboardingStage.CREATED, OnboardingStage.COMMUNITY_CHOICE),
@@ -163,7 +163,7 @@ async def test_proceed_to_stage_invalid_transition(
         (OnboardingStage.COMPLETED, OnboardingStage.COMMUNITY_INVITE),
     ],
 )
-async def test_return_to_stage_invalid_transition(
+async def test_returning_in_onboarding_invalid_transition(
     authorized_client: TestClient,
     user: User,
     current_stage: OnboardingStage,

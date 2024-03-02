@@ -61,7 +61,7 @@ def is_cross_site(request: PytestRequest[bool]) -> bool:
 
 
 @pytest.mark.anyio()
-async def test_signup(
+async def test_signing_up(
     mock_stack: MockStack,
     client: TestClient,
     active_session: ActiveSession,
@@ -95,7 +95,7 @@ async def test_signup(
         pytest.param({"username": "new_one"}, "Email already in use", id="email"),
     ],
 )
-async def test_signup_conflict(
+async def test_signing_up_conflict(
     client: TestClient,
     active_session: ActiveSession,
     user_data: dict[str, Any],
@@ -114,7 +114,7 @@ async def test_signup_conflict(
 
 
 @pytest.mark.anyio()
-async def test_signin(
+async def test_signing_in(
     client: TestClient,
     active_session: ActiveSession,
     user_data: dict[str, Any],
@@ -141,7 +141,7 @@ async def test_signin(
         pytest.param("password", "Wrong password", id="wrong_password"),
     ],
 )
-async def test_signin_errors(
+async def test_signing_in_invalid_credentials(
     client: TestClient,
     user_data: dict[str, Any],
     altered_key: str,
@@ -156,7 +156,7 @@ async def test_signin_errors(
 
 
 @pytest.mark.anyio()
-async def test_signout(
+async def test_signing_out(
     authorized_client: TestClient,
     active_session: ActiveSession,
     session_token: str,
@@ -167,7 +167,7 @@ async def test_signout(
         await assert_session(session_token, invalid=True)
 
 
-def test_no_auth_header(client: TestClient) -> None:
+def test_signing_out_unauthorized(client: TestClient) -> None:
     assert_response(
         client.post("/api/signout/"),
         expected_code=401,
@@ -176,7 +176,7 @@ def test_no_auth_header(client: TestClient) -> None:
 
 
 @pytest.mark.anyio()
-async def test_invalid_session(
+async def test_signing_out_invalid_session(
     client: TestClient, invalid_token: str, use_cookie_auth: bool
 ) -> None:
     cookies = {AUTH_COOKIE_NAME: invalid_token} if use_cookie_auth else {}

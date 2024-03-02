@@ -115,7 +115,7 @@ async def test_user_not_found(
 
 
 @pytest.mark.anyio()
-async def test_username_in_use(
+async def test_user_updating_username_in_use(
     authorized_client: TestClient,
     user: User,
     other_user: User,

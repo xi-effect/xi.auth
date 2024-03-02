@@ -14,7 +14,7 @@ from tests.utils import PytestRequest, assert_nodata_response, assert_response
 
 
 @pytest.mark.anyio()
-async def test_home_success(
+async def test_retrieving_home_data(
     authorized_client: TestClient,
     user_data: dict[str, Any],
     user: User,
@@ -26,7 +26,7 @@ async def test_home_success(
 
 
 @pytest.mark.anyio()
-async def test_proxy_auth_success(
+async def test_requesting_proxy_auth(
     authorized_client: TestClient,
     session: Session,
     user: User,
@@ -42,7 +42,7 @@ async def test_proxy_auth_success(
 
 
 @pytest.mark.anyio()
-async def test_proxy_auth_success_for_optional(
+async def test_requesting_options_in_proxy_auth(
     authorized_client: TestClient,
     session: Session,
     user: User,
@@ -59,7 +59,7 @@ async def test_proxy_auth_success_for_optional(
 
 @pytest.mark.parametrize("cross_site", [False, True], ids=["same_site", "cross_site"])
 @pytest.mark.anyio()
-async def test_proxy_auth_renewal(
+async def test_renewing_session_in_proxy_auth(
     active_session: ActiveSession,
     authorized_client: TestClient,
     session: Session,
@@ -92,7 +92,7 @@ def path(request: PytestRequest[str]) -> str:
 
 
 @pytest.mark.anyio()
-async def test_no_auth_header(client: TestClient, path: str) -> None:
+async def test_requesting_unauthorized(client: TestClient, path: str) -> None:
     assert_response(
         client.get(path),
         expected_code=401,
@@ -101,7 +101,7 @@ async def test_no_auth_header(client: TestClient, path: str) -> None:
 
 
 @pytest.mark.anyio()
-async def test_invalid_session(
+async def test_requesting_invalid_session(
     client: TestClient, invalid_token: str, path: str, use_cookie_auth: bool
 ) -> None:
     cookies = {AUTH_COOKIE_NAME: invalid_token} if use_cookie_auth else {}
