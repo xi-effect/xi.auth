@@ -15,7 +15,7 @@ class UserProfileResponses(Responses):
 
 
 @router.get(
-    "/by_id/{user_id}/profile/",
+    "/by-id/{user_id}/profile/",
     response_model=User.UserProfileModel,
     responses=UserProfileResponses.responses(),
     summary="Retrieve user profile by id",
@@ -31,7 +31,7 @@ async def get_profile_by_id(
 
 
 @router.get(
-    "/by_username/{username}/profile/",
+    "/by-username/{username}/profile/",
     response_model=User.UserProfileModel,
     responses=UserProfileResponses.responses(),
     summary="Retrieve user profile by username",
