@@ -35,7 +35,7 @@ extend-ignore =
   WPS465  # fails to understand pipe-unions for types
   WPS601  # fails to same-name class and instance attributes (pydantic & sqlalchemy)
   # to many
-  WPS201 WPS204 WPS210 WPS214 WPS217 WPS218 WPS221
+  WPS201 WPS204 WPS210 WPS214 WPS217 WPS218 WPS221 WPS202
 
   # don't block features
   WPS100  # utils is a module name
