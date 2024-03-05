@@ -21,11 +21,13 @@ from app.common.sqla import session_context
 from app.routes import (
     avatar_rst,
     current_user_rst,
+    forms_rst,
     onboarding_rst,
     proxy_rst,
     reglog_rst,
     sessions_rst,
     users_mub,
+    users_rst,
 )
 from app.utils.cors import CorrectCORSMiddleware
 
@@ -59,9 +61,11 @@ app.add_middleware(
 # API
 app.include_router(reglog_rst.router, prefix="/api")
 app.include_router(onboarding_rst.router, prefix="/api/onboarding")
+app.include_router(users_rst.router, prefix="/api/users")
 app.include_router(current_user_rst.router, prefix="/api/users/current")
 app.include_router(avatar_rst.router, prefix="/api/users/current/avatar")
 app.include_router(sessions_rst.router, prefix="/api/sessions")
+app.include_router(forms_rst.router, prefix="/api")
 
 # MUB
 app.include_router(users_mub.router, prefix="/mub/users")
