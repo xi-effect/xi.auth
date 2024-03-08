@@ -5,7 +5,7 @@ from starlette.status import HTTP_404_NOT_FOUND
 
 from app.common.responses import Responses
 from app.models.sessions_db import Session
-from app.utils.authorization import add_session_to_response
+from app.utils.authorization import AUTH_COOKIE_NAME, add_session_to_response
 from app.utils.magic import include_responses
 from app.utils.users import TargetUser, UserResponses
 
@@ -15,6 +15,17 @@ router = APIRouter(tags=["sessions mub"])
 @include_responses(UserResponses)
 class MubSessionResponses(Responses):
     SESSION_NOT_FOUND = (HTTP_404_NOT_FOUND, Session.not_found_text)
+
+
+def add_mub_session_to_response(response: Response, session: Session) -> None:
+    add_session_to_response(response, session)
+
+    response.headers["X-Session-ID"] = str(session.id)
+    response.headers["X-User-ID"] = str(session.user_id)
+    response.headers["X-Username"] = session.user.username
+
+    response.headers["X-Session-Cookie"] = AUTH_COOKIE_NAME
+    response.headers["X-Session-Token"] = session.token
 
 
 @router.post(
@@ -28,14 +39,14 @@ async def make_mub_session(
     user: TargetUser,
 ) -> None:
     session = await Session.create(user_id=user.id, mub=True)
-    add_session_to_response(response, session)
+    add_mub_session_to_response(response, session)
 
 
 @router.put(
     "/",
     status_code=204,
     responses=MubSessionResponses.responses(),
-    summary="Retrive or create an admin session",
+    summary="Retrieve or create an admin session",
 )
 async def upsert_mub_session(
     response: Response,
@@ -44,7 +55,7 @@ async def upsert_mub_session(
     session = await Session.find_active_mub_session(user.id)
     if session is None:
         session = await Session.create(user_id=user.id, mub=True)
-    add_session_to_response(response, session)
+    add_mub_session_to_response(response, session)
 
 
 @router.get(

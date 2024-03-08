@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-from pydantic import constr
 from pydantic_marshals.contains import assert_contains
 from starlette.testclient import TestClient
 
@@ -9,9 +8,13 @@ from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_COOKIE_NAME
 from tests.conftest import ActiveSession, Factory
-from tests.functional.test_reglog import COOKIE_REGEX
 from tests.functional.test_sessions import session_checker
-from tests.utils import assert_nodata_response, assert_response, get_db_session
+from tests.utils import (
+    assert_nodata_response,
+    assert_response,
+    assert_session_from_cookie,
+    get_db_session,
+)
 
 
 @pytest.fixture()
@@ -27,21 +30,33 @@ async def test_making_mub_session(
 ) -> None:
     response = assert_nodata_response(
         client.post(f"/mub/users/{user.id}/sessions/"),
-        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
+        expected_cookies={AUTH_COOKIE_NAME: str},
+        expected_headers={
+            "X-Session-ID": int,
+            "X-User-ID": str(user.id),
+            "X-Username": user.username,
+            "X-Session-Cookie": AUTH_COOKIE_NAME,
+            "X-Session-Token": str,
+        },
     )
 
     async with active_session():
-        session = await Session.find_first_by_kwargs(
-            token=response.cookies[AUTH_COOKIE_NAME]
-        )
-        assert session is not None
+        session = await assert_session_from_cookie(response)
         assert_contains(
             {
                 "mub": session.mub,
                 "user_id": session.user_id,
                 "invalid": session.invalid,
+                "id": session.id,
+                "token": session.token,
             },
-            {"mub": True, "user_id": user.id, "invalid": False},
+            {
+                "mub": True,
+                "user_id": user.id,
+                "invalid": False,
+                "id": int(response.headers["X-Session-ID"]),
+                "token": response.headers["X-Session-Token"],
+            },
         )
 
 
@@ -53,38 +68,53 @@ async def test_upserting_mub_session(
 ) -> None:
     response = assert_nodata_response(
         client.put(f"/mub/users/{user.id}/sessions/"),
-        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
+        expected_cookies={AUTH_COOKIE_NAME: str},
+        expected_headers={
+            "X-Session-ID": int,
+            "X-User-ID": str(user.id),
+            "X-Username": user.username,
+            "X-Session-Cookie": AUTH_COOKIE_NAME,
+            "X-Session-Token": str,
+        },
     )
 
     async with active_session():
-        session = await Session.find_first_by_kwargs(
-            token=response.cookies[AUTH_COOKIE_NAME]
-        )
-        assert session is not None
+        session = await assert_session_from_cookie(response)
         assert_contains(
             {
                 "mub": session.mub,
                 "user_id": session.user_id,
                 "invalid": session.invalid,
+                "id": session.id,
+                "token": session.token,
             },
-            {"mub": True, "user_id": user.id, "invalid": False},
+            {
+                "mub": True,
+                "user_id": user.id,
+                "invalid": False,
+                "id": int(response.headers["X-Session-ID"]),
+                "token": response.headers["X-Session-Token"],
+            },
         )
 
 
 @pytest.mark.anyio()
 async def test_upserting_existing_mub_session(
-    active_session: ActiveSession,
     client: TestClient,
     user: User,
     mub_session: Session,
 ) -> None:
-    response = assert_nodata_response(
+    assert_nodata_response(
         client.put(f"/mub/users/{user.id}/sessions/"),
-        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
+        expected_cookies={AUTH_COOKIE_NAME: mub_session.token},
+        expected_headers={
+            "X-Session-ID": str(mub_session.id),
+            "X-User-ID": str(user.id),
+            "X-Username": user.username,
+            "X-Session-Cookie": AUTH_COOKIE_NAME,
+            "X-Session-Token": mub_session.token,
+        },
     )
-
-    async with active_session():
-        assert response.cookies[AUTH_COOKIE_NAME] == mub_session.token
 
 
 @pytest.mark.anyio()
@@ -97,21 +127,33 @@ async def test_upserting_expired_mub_session(
     await session_factory(mub=True, expiry=datetime.fromtimestamp(0))
     response = assert_nodata_response(
         client.put(f"/mub/users/{user.id}/sessions/"),
-        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
+        expected_cookies={AUTH_COOKIE_NAME: str},
+        expected_headers={
+            "X-Session-ID": int,
+            "X-User-ID": str(user.id),
+            "X-Username": user.username,
+            "X-Session-Cookie": AUTH_COOKIE_NAME,
+            "X-Session-Token": str,
+        },
     )
 
     async with active_session():
-        session = await Session.find_first_by_kwargs(
-            token=response.cookies[AUTH_COOKIE_NAME]
-        )
-        assert session is not None
+        session = await assert_session_from_cookie(response)
         assert_contains(
             {
                 "mub": session.mub,
                 "user_id": session.user_id,
                 "invalid": session.invalid,
+                "id": session.id,
+                "token": session.token,
             },
-            {"mub": True, "user_id": user.id, "invalid": False},
+            {
+                "mub": True,
+                "user_id": user.id,
+                "invalid": False,
+                "id": int(response.headers["X-Session-ID"]),
+                "token": response.headers["X-Session-Token"],
+            },
         )
 
 
@@ -125,21 +167,33 @@ async def test_upserting_disabled_mub_session(
     await session_factory(mub=True, disabled=True)
     response = assert_nodata_response(
         client.put(f"/mub/users/{user.id}/sessions/"),
-        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
+        expected_cookies={AUTH_COOKIE_NAME: str},
+        expected_headers={
+            "X-Session-ID": int,
+            "X-User-ID": str(user.id),
+            "X-Username": user.username,
+            "X-Session-Cookie": AUTH_COOKIE_NAME,
+            "X-Session-Token": str,
+        },
     )
 
     async with active_session():
-        session = await Session.find_first_by_kwargs(
-            token=response.cookies[AUTH_COOKIE_NAME]
-        )
-        assert session is not None
+        session = await assert_session_from_cookie(response)
         assert_contains(
             {
                 "mub": session.mub,
                 "user_id": session.user_id,
                 "invalid": session.invalid,
+                "id": session.id,
+                "token": session.token,
             },
-            {"mub": True, "user_id": user.id, "invalid": False},
+            {
+                "mub": True,
+                "user_id": user.id,
+                "invalid": False,
+                "id": int(response.headers["X-Session-ID"]),
+                "token": response.headers["X-Session-Token"],
+            },
         )
 
 
@@ -195,7 +249,7 @@ async def test_authorized_method_with_mub_session(
 
 @pytest.mark.parametrize("method", ["POST", "PUT", "GET"])
 @pytest.mark.anyio()
-async def test_retriving_mub_session_user_not_found(
+async def test_retrieving_mub_session_user_not_found(
     client: TestClient,
     deleted_user: User,
     method: str,
