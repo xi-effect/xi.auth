@@ -101,13 +101,13 @@ async def test_user_deleting(client: TestClient, user: User) -> None:
 @pytest.mark.anyio()
 @pytest.mark.parametrize("method", ["GET", "PATCH", "DELETE"])
 async def test_user_not_found(
-    client: TestClient, user: User, active_session: ActiveSession, method: str
+    client: TestClient, deleted_user: User, method: str
 ) -> None:
-    async with active_session():
-        await user.delete()
     assert_response(
         client.request(
-            method, f"/mub/users/{user.id}/", json={} if method == "PATCH" else None
+            method,
+            f"/mub/users/{deleted_user.id}/",
+            json={} if method == "PATCH" else None,
         ),
         expected_code=404,
         expected_json={"detail": "User not found"},

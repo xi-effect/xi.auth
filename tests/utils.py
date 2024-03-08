@@ -3,6 +3,7 @@ from typing import Generic, TypeVar
 from httpx import Response
 from pydantic_marshals.contains import TypeChecker, assert_contains
 
+from app.models.sessions_db import Session
 from app.models.users_db import User
 
 
@@ -37,9 +38,11 @@ def assert_response(
     assert_contains(
         {
             "status_code": response.status_code,
-            "json_data": response.json()
-            if response.headers.get("Content-Type") == "application/json"
-            else None,
+            "json_data": (
+                response.json()
+                if response.headers.get("Content-Type") == "application/json"
+                else None
+            ),
             "headers": response.headers,
         },
         {
@@ -64,3 +67,9 @@ async def get_db_user(user: User) -> User:
     db_user = await User.find_first_by_id(user.id)
     assert db_user is not None
     return db_user
+
+
+async def get_db_session(session: Session) -> Session:
+    db_session = await Session.find_first_by_id(session.id)
+    assert db_session is not None
+    return db_session

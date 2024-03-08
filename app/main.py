@@ -25,6 +25,7 @@ from app.routes import (
     onboarding_rst,
     proxy_rst,
     reglog_rst,
+    sessions_mub,
     sessions_rst,
     users_mub,
     users_rst,
@@ -69,6 +70,7 @@ app.include_router(forms_rst.router, prefix="/api")
 
 # MUB
 app.include_router(users_mub.router, prefix="/mub/users")
+app.include_router(sessions_mub.router, prefix="/mub/users/{user_id}/sessions")
 
 # Proxy
 app.include_router(proxy_rst.router, prefix="/proxy/auth")
