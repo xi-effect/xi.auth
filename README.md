@@ -22,7 +22,7 @@ uvicorn app.main:app --port 5100 --reload
 
 Остановить зависимости:
 ```sh
-docker-compose down
+docker compose down
 ```
 
 ### Links
@@ -55,24 +55,24 @@ docker-compose down
 ### Commands
 ```sh
 # запустить все вспомогательные сервисы для локальной разработки
-docker-compose up -d
+docker compose up -d
 # выключить обратно
-docker-compose down
+docker compose down
 
 # тоже самое, но вместе с докеризированным приложением
-docker-compose --profile app up -d
-docker-compose --profile app down
+docker compose --profile app up -d
+docker compose --profile app down
 
 # смотреть логи в реальном времени
-docker-compose logs --follow <сервис>
-docker-compose logs --follow mq  # пример
+docker compose logs --follow <сервис>
+docker compose logs --follow mq  # пример
 
 # проверить статусы сервисов
-docker-compose ps -a
+docker compose ps -a
 
 # зайти в какой-то контейнер
-docker-compose exec -ti <сервис> <shell-команда>
-docker-compose exec -ti db psql -U test -d test  # пример
+docker compose exec -ti <сервис> <shell-команда>
+docker compose exec -ti db psql -U test -d test  # пример
 ```
 
 ### Alembic
