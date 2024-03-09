@@ -1,58 +1,20 @@
-from datetime import timezone
-from email.utils import format_datetime
 from typing import Any
 
-import httpx
 import pytest
-from pydantic import constr
-from pydantic_marshals.contains import UnorderedLiteralCollection, assert_contains
-from starlette import responses
 from starlette.testclient import TestClient
 
-from app.common.config import COOKIE_DOMAIN, pochta_producer
-from app.models.sessions_db import Session
+from app.common.config import pochta_producer
 from app.models.users_db import User
 from app.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
 from tests.conftest import ActiveSession
 from tests.mock_stack import MockStack
-from tests.utils import PytestRequest, assert_nodata_response, assert_response
-
-
-async def assert_session(token: str, invalid: bool = False) -> Session:
-    session = await Session.find_first_by_kwargs(token=token)
-    assert session is not None
-    assert session.invalid == invalid
-    return session
-
-
-async def assert_session_cookie(
-    response: httpx.Response | responses.Response, cross_site: bool = False
-) -> None:
-    cookie_parts: list[str] = [
-        part.strip()
-        for part in response.headers["Set-Cookie"].partition("=")[2].split(";")
-    ]
-
-    session = await assert_session(cookie_parts[0])
-    assert session.cross_site == cross_site
-
-    expires = format_datetime(session.expiry.astimezone(timezone.utc), usegmt=True)
-    assert_contains(
-        [part.lower() for part in cookie_parts[1:]],
-        UnorderedLiteralCollection(
-            {
-                f"domain={COOKIE_DOMAIN}",
-                f"expires={expires.lower()}",
-                "samesite=none" if cross_site else "samesite=strict",
-                "path=/",
-                "httponly",
-                "secure",
-            }
-        ),
-    )
-
-
-COOKIE_REGEX = f"{AUTH_COOKIE_NAME}=(.*)"
+from tests.utils import (
+    PytestRequest,
+    assert_nodata_response,
+    assert_response,
+    assert_session,
+    assert_session_from_cookie,
+)
 
 
 @pytest.fixture(params=[False, True], ids=["same_site", "cross_site"])
@@ -70,17 +32,20 @@ async def test_signing_up(
 ) -> None:
     pochta_mock = mock_stack.enter_async_mock(pochta_producer, "send_message")
 
-    headers = {"X-Testing": "true"} if is_cross_site else {}
     response = assert_response(
-        client.post("/api/signup/", json=user_data, headers=headers),
+        client.post(
+            "/api/signup/",
+            json=user_data,
+            headers={"X-Testing": "true"} if is_cross_site else None,
+        ),
         expected_json={**user_data, "id": int, "password": None},
-        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
+        expected_cookies={AUTH_COOKIE_NAME: str},
     )
 
     pochta_mock.assert_called_once()
 
     async with active_session():
-        await assert_session_cookie(response, cross_site=is_cross_site)
+        await assert_session_from_cookie(response, cross_site=is_cross_site)
 
         user = await User.find_first_by_id(response.json()["id"])
         assert user is not None
@@ -104,9 +69,12 @@ async def test_signing_up_conflict(
     data_mod: dict[str, Any],
     error: str,
 ) -> None:
-    headers = {"X-Testing": "true"} if is_cross_site else {}
     assert_response(
-        client.post("/api/signup/", json={**user_data, **data_mod}, headers=headers),
+        client.post(
+            "/api/signup/",
+            json={**user_data, **data_mod},
+            headers={"X-Testing": "true"} if is_cross_site else None,
+        ),
         expected_code=409,
         expected_json={"detail": error},
         expected_headers={"Set-Cookie": None},
@@ -121,15 +89,18 @@ async def test_signing_in(
     user: User,
     is_cross_site: bool,
 ) -> None:
-    headers = {"X-Testing": "true"} if is_cross_site else {}
     response = assert_response(
-        client.post("/api/signin/", json=user_data, headers=headers),
+        client.post(
+            "/api/signin/",
+            json=user_data,
+            headers={"X-Testing": "true"} if is_cross_site else None,
+        ),
         expected_json={**user_data, "id": user.id, "password": None},
-        expected_headers={"Set-Cookie": constr(pattern=COOKIE_REGEX)},
+        expected_cookies={AUTH_COOKIE_NAME: str},
     )
 
     async with active_session():
-        await assert_session_cookie(response, cross_site=is_cross_site)
+        await assert_session_from_cookie(response, cross_site=is_cross_site)
 
 
 @pytest.mark.anyio()
@@ -179,10 +150,12 @@ def test_signing_out_unauthorized(client: TestClient) -> None:
 async def test_signing_out_invalid_session(
     client: TestClient, invalid_token: str, use_cookie_auth: bool
 ) -> None:
-    cookies = {AUTH_COOKIE_NAME: invalid_token} if use_cookie_auth else {}
-    headers = {} if use_cookie_auth else {AUTH_HEADER_NAME: invalid_token}
     assert_response(
-        client.post("/api/signout/", cookies=cookies, headers=headers),
+        client.post(
+            "/api/signout/",
+            cookies={AUTH_COOKIE_NAME: invalid_token} if use_cookie_auth else {},
+            headers={} if use_cookie_auth else {AUTH_HEADER_NAME: invalid_token},
+        ),
         expected_code=401,
         expected_json={"detail": "Session is invalid"},
     )

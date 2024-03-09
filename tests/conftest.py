@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.config import sessionmaker
+from app.common.config import COOKIE_DOMAIN, sessionmaker
 from app.common.sqla import session_context
 from app.main import app
 from app.models.sessions_db import Session
@@ -33,10 +33,15 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def _setup_faker(faker: Faker) -> None:
     faker.add_provider(internet)
     faker.add_provider(webp_file.GraphicWebpFileProvider)
+
+
+@pytest.fixture(scope="session")
+def faker(_session_faker: Faker) -> Faker:
+    return _session_faker
 
 
 class ActiveSession(Protocol):
@@ -64,7 +69,7 @@ async def _reset_database(active_session: ActiveSession) -> AsyncIterator[None]:
 
 @pytest.fixture(scope="session")
 def client() -> Iterator[TestClient]:
-    with TestClient(app) as client:
+    with TestClient(app, base_url=f"http://{COOKIE_DOMAIN}") as client:
         yield client
 
 
@@ -98,6 +103,21 @@ async def other_user(
             email=faker.email(),
             password=User.generate_hash(faker.password()),
         )
+
+
+@pytest.fixture(scope="session")
+async def deleted_user(
+    faker: Faker,
+    active_session: ActiveSession,
+) -> User:
+    async with active_session():
+        user = await User.create(
+            username=faker.profile(fields=["username"])["username"],
+            email=faker.email(),
+            password=User.generate_hash(faker.password()),
+        )
+        await user.delete()
+    return user
 
 
 T = TypeVar("T", covariant=True)
@@ -136,7 +156,7 @@ def use_cookie_auth(request: PytestRequest[bool]) -> bool:
 
 @pytest.fixture(scope="session")
 def authorized_client_base() -> Iterator[TestClient]:
-    with TestClient(app) as client:
+    with TestClient(app, base_url=f"http://{COOKIE_DOMAIN}") as client:
         yield client
 
 
@@ -174,7 +194,7 @@ def other_session_token(other_session: Session) -> str:
 
 @pytest.fixture(scope="session")
 def other_client_base() -> Iterator[TestClient]:
-    with TestClient(app) as client:
+    with TestClient(app, base_url=f"http://{COOKIE_DOMAIN}") as client:
         yield client
 
 

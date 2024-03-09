@@ -1,16 +1,17 @@
-from datetime import timedelta
+from datetime import timedelta, timezone
 from typing import Final
 
 import pytest
 from fastapi import Response
 from freezegun import freeze_time
 
+from app.common.config import COOKIE_DOMAIN
 from app.models.sessions_db import Session
 from app.models.users_db import User
-from app.utils.authorization import authorize_user
+from app.utils.authorization import AUTH_COOKIE_NAME, authorize_user
 from tests.conftest import ActiveSession
-from tests.functional.test_reglog import assert_session_cookie
 from tests.mock_stack import MockStack
+from tests.utils import get_db_session
 
 days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_length).days
 
@@ -62,18 +63,27 @@ async def test_automatic_renewal(
     user: User,
     cross_site: bool,
 ) -> None:
-    session_is_renewal_required = mock_stack.enter_mock(
-        Session, "is_renewal_required", return_value=True
-    )
-    session_renew_mock = mock_stack.enter_mock(Session, "renew")
-    response = Response()
-
     async with active_session():
         session = await Session.create(user_id=user.id, cross_site=cross_site)
-        await authorize_user(session, response)
+        session_is_renewal_required = mock_stack.enter_mock(
+            Session, "is_renewal_required", return_value=True
+        )
+        session_renew_mock = mock_stack.enter_mock(Session, "renew")
+
+    response = Response()
+    response_set_cookie_mock = mock_stack.enter_mock(response, "set_cookie")
 
     async with active_session():
-        await assert_session_cookie(response, cross_site=cross_site)
+        await authorize_user(await get_db_session(session), response)
 
     session_is_renewal_required.assert_called_once_with()
     session_renew_mock.assert_called_once_with()
+    response_set_cookie_mock.assert_called_once_with(
+        AUTH_COOKIE_NAME,
+        session.token,
+        expires=session.expiry.astimezone(timezone.utc),
+        domain=COOKIE_DOMAIN,
+        samesite="none" if cross_site else "strict",
+        httponly=True,
+        secure=True,
+    )

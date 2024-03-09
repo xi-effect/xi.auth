@@ -52,6 +52,9 @@ class Session(Base):
     created: Mapped[datetime] = mapped_column(default=datetime.utcnow)
     cross_site: Mapped[bool] = mapped_column(default=False)
 
+    # Admin
+    mub: Mapped[bool] = mapped_column(default=False)
+
     __table_args__ = (
         Index("hash_index_session_token", token, postgresql_using="hash"),
     )
@@ -60,6 +63,7 @@ class Session(Base):
         columns=[id, created, expiry, disabled],
         properties=[invalid],
     )
+    MubFullModel = FullModel.extend(columns=[mub])
 
     def is_renewal_required(self) -> bool:
         return self.expiry - self.renew_period_length < datetime.utcnow()
@@ -83,7 +87,11 @@ class Session(Base):
         user_id: int,
         exclude_id: int | None = None,
     ) -> Sequence[Self]:
-        stmt = select(cls).filter_by(user_id=user_id).order_by(cls.expiry.desc())
+        stmt = (
+            select(cls)
+            .filter_by(user_id=user_id, mub=False)
+            .order_by(cls.expiry.desc())
+        )
         if exclude_id is not None:
             stmt = stmt.filter(cls.id != exclude_id)
         return await db.get_all(stmt)
@@ -93,6 +101,7 @@ class Session(Base):
             update(type(self))
             .where(
                 type(self).id != self.id,
+                type(self).mub.is_(False),
                 type(self).user_id == self.user_id,
                 type(self).disabled.is_(False),
             )
@@ -105,7 +114,7 @@ class Session(Base):
         first_outside_limit: Self | None = await db.get_first(
             select(cls)
             .filter(cls.disabled.is_(False), cls.expiry >= datetime.utcnow())
-            .filter_by(user_id=user_id)
+            .filter_by(user_id=user_id, mub=False)
             .order_by(cls.expiry.desc())
             .offset(cls.max_concurrent_sessions)
         )
@@ -114,6 +123,7 @@ class Session(Base):
                 update(cls)
                 .where(
                     cls.user_id == user_id,
+                    cls.mub.is_(False),
                     cls.expiry <= first_outside_limit.expiry,
                     cls.disabled.is_(False),
                 )
@@ -153,3 +163,12 @@ class Session(Base):
     async def cleanup_by_user(cls, user_id: int) -> None:
         await cls.cleanup_concurrent_by_user(user_id)
         await cls.cleanup_history_by_user(user_id)
+
+    @classmethod
+    async def find_active_mub_session(cls, user_id: int) -> Self | None:
+        return await db.get_first(
+            select(cls)
+            .filter(cls.disabled.is_(False), cls.expiry > datetime.utcnow())
+            .filter_by(user_id=user_id)
+            .order_by(cls.expiry.desc())
+        )
