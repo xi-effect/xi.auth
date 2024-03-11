@@ -36,6 +36,10 @@ VACANCY_WEBHOOK_URL: str | None = getenv("VACANCY_WEBHOOK_URL", None)
 
 MUB_KEY: str = getenv("MUB_KEY", "local")
 
+SUPBOT_TOKEN: str | None = getenv("SUPBOT_TOKEN")
+SUPBOT_GROUP_ID: str | None = getenv("SUPBOT_GROUP_ID")
+SUPBOT_CHANNEL_ID: str | None = getenv("SUPBOT_CHANNEL_ID")
+
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
     "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
