@@ -2,6 +2,7 @@ from os import getenv
 from pathlib import Path
 
 from cryptography.fernet import Fernet
+from dotenv import load_dotenv
 from sqlalchemy import MetaData, NullPool
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -11,6 +12,8 @@ from app.common.rabbit import RabbitDirectProducer
 from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
+
+load_dotenv(current_directory / ".env")
 
 AVATARS_PATH: Path = current_directory / "avatars"
 
