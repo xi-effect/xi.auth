@@ -24,6 +24,8 @@ MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
 
 DEMO_WEBHOOK_URL: str | None = getenv("DEMO_WEBHOOK_URL", None)
 
+MUB_KEY: str = getenv("MUB_KEY", "local")
+
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
     "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
