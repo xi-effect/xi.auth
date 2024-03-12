@@ -17,6 +17,7 @@ from app.common.config import (
     SUPBOT_CHANNEL_ID,
     SUPBOT_GROUP_ID,
     SUPBOT_TOKEN,
+    TESTING_MODE,
     Base,
     engine,
     pochta_producer,
@@ -56,7 +57,8 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     await pochta_producer.connect(connection)
 
     if (
-        SUPBOT_TOKEN is not None
+        not TESTING_MODE
+        and SUPBOT_TOKEN is not None
         and SUPBOT_GROUP_ID is not None
         and SUPBOT_CHANNEL_ID is not None
     ):  # pragma: no cover

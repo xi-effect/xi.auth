@@ -1,5 +1,6 @@
 from os import getenv
 from pathlib import Path
+from sys import modules
 
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
@@ -17,8 +18,10 @@ load_dotenv(current_directory / ".env")
 
 AVATARS_PATH: Path = current_directory / "avatars"
 
-COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
+TESTING_MODE: bool = "pytest" in modules
+
+COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 DATABASE_MIGRATED: bool = getenv("DATABASE_MIGRATED", "0") == "1"
 
 DB_URL: str = getenv("DB_LINK", "postgresql+asyncpg://test:test@localhost:5432/test")
