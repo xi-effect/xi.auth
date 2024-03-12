@@ -1,10 +1,6 @@
-import logging
-from asyncio import AbstractEventLoop, get_running_loop
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from aio_pika import connect_robust
-from aiogram import Bot, Dispatcher
 from fastapi import APIRouter, FastAPI
 from starlette.requests import Request
 from starlette.responses import Response
@@ -12,15 +8,7 @@ from starlette.responses import Response
 from app.common.config import (
     AVATARS_PATH,
     DATABASE_MIGRATED,
-    MQ_URL,
     PRODUCTION_MODE,
-    SUPBOT_CHANNEL_ID,
-    SUPBOT_GROUP_ID,
-    SUPBOT_TOKEN,
-    TESTING_MODE,
-    Base,
-    engine,
-    pochta_producer,
     sessionmaker,
 )
 from app.common.sqla import session_context
@@ -40,7 +28,8 @@ from app.routes import (
 )
 from app.utils.cors import CorrectCORSMiddleware
 from app.utils.mub import MUBProtection
-from supbot.main import telegram_app
+from app.utils.setup import connect_rabbit, reinit_database
+from supbot.setup import maybe_initialize_telegram_app
 
 
 @asynccontextmanager
@@ -48,32 +37,15 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     AVATARS_PATH.mkdir(exist_ok=True)
 
     if not PRODUCTION_MODE and not DATABASE_MIGRATED:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-            await conn.run_sync(Base.metadata.create_all)
+        await reinit_database()
 
-    loop: AbstractEventLoop = get_running_loop()
-    connection = await connect_robust(MQ_URL, loop=loop)
-    await pochta_producer.connect(connection)
+    rabbit_connection = await connect_rabbit()
 
-    if (
-        not TESTING_MODE
-        and SUPBOT_TOKEN is not None
-        and SUPBOT_GROUP_ID is not None
-        and SUPBOT_CHANNEL_ID is not None
-    ):  # pragma: no cover
-        telegram_app.initialize(
-            bot=Bot(SUPBOT_TOKEN),
-            dispatcher=Dispatcher(
-                group_id=int(SUPBOT_GROUP_ID),
-                channel_id=int(SUPBOT_CHANNEL_ID),
-            ),
-        )
-    elif PRODUCTION_MODE:
-        logging.warning("Configuration for supbot is missing")
+    maybe_initialize_telegram_app()
 
     yield
-    await connection.close()
+
+    await rabbit_connection.close()
 
 
 app = FastAPI(lifespan=lifespan)
