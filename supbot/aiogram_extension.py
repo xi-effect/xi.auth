@@ -1,4 +1,7 @@
+import warnings
+
 from aiogram import Bot, Dispatcher, Router
+from aiogram.types import Message
 
 
 class TelegramApp:
@@ -35,3 +38,10 @@ class TelegramApp:
         if self._dispatcher is None:
             raise EnvironmentError("Dispatcher is not initialized")
         return self._dispatcher
+
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore", UserWarning)
+
+    class MessageExt(Message):
+        bot: Bot  # marking bot as required for mypy

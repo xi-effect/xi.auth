@@ -13,5 +13,11 @@ def main() -> None:
         raise EnvironmentError("Environment variable 'SUPBOT_GROUP_ID' is not set")
     if SUPBOT_CHANNEL_ID is None:
         raise EnvironmentError("Environment variable 'SUPBOT_CHANNEL_ID' is not set")
-    telegram_app.initialize(bot=Bot(SUPBOT_TOKEN), dispatcher=Dispatcher())
+    telegram_app.initialize(
+        bot=Bot(SUPBOT_TOKEN),
+        dispatcher=Dispatcher(
+            group_id=int(SUPBOT_GROUP_ID),
+            channel_id=int(SUPBOT_CHANNEL_ID),
+        ),
+    )
     run(telegram_app.dispatcher.start_polling(telegram_app.bot))
