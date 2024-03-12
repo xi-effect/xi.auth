@@ -42,6 +42,8 @@ MUB_KEY: str = getenv("MUB_KEY", "local")
 SUPBOT_TOKEN: str | None = getenv("SUPBOT_TOKEN")
 SUPBOT_GROUP_ID: str | None = getenv("SUPBOT_GROUP_ID")
 SUPBOT_CHANNEL_ID: str | None = getenv("SUPBOT_CHANNEL_ID")
+SUPBOT_POLLING: bool = getenv("SUPBOT_POLLING", "0") == "1"
+SUPBOT_WEBHOOK_URL: str = getenv("SUPBOT_WEBHOOK_URL", "http://localhost:5100")
 
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
