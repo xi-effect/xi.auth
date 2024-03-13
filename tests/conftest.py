@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.common.config import COOKIE_DOMAIN, sessionmaker
+from app.common.config import COOKIE_DOMAIN, MUB_KEY, sessionmaker
 from app.common.sqla import session_context
 from app.main import app
 from app.models.sessions_db import Session
@@ -70,6 +70,14 @@ async def _reset_database(active_session: ActiveSession) -> AsyncIterator[None]:
 @pytest.fixture(scope="session")
 def client() -> Iterator[TestClient]:
     with TestClient(app, base_url=f"http://{COOKIE_DOMAIN}") as client:
+        yield client
+
+
+@pytest.fixture(scope="session")
+def mub_client() -> Iterator[TestClient]:
+    with TestClient(
+        app, base_url=f"http://{COOKIE_DOMAIN}", headers={"X-MUB-Secret": MUB_KEY}
+    ) as client:
         yield client
 
 
@@ -215,3 +223,12 @@ async def invalid_session(session_factory: Factory[Session]) -> Session:
 @pytest.fixture()
 def invalid_token(invalid_session: Session) -> str:
     return invalid_session.token
+
+
+@pytest.fixture(params=[True, False])
+def invalid_mub_key_headers(
+    request: PytestRequest[bool], faker: Faker
+) -> dict[str, Any] | None:
+    if request.param:
+        return {"X-MUB-Secret": faker.pystr()}
+    return None

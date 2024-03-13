@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from aio_pika import connect_robust
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -31,6 +31,7 @@ from app.routes import (
     users_rst,
 )
 from app.utils.cors import CorrectCORSMiddleware
+from app.utils.mub import MUBProtection
 
 
 @asynccontextmanager
@@ -69,8 +70,11 @@ app.include_router(sessions_rst.router, prefix="/api/sessions")
 app.include_router(forms_rst.router, prefix="/api")
 
 # MUB
-app.include_router(users_mub.router, prefix="/mub/users")
-app.include_router(sessions_mub.router, prefix="/mub/users/{user_id}/sessions")
+mub_router = APIRouter()
+mub_router.include_router(users_mub.router, prefix="/mub/users")
+mub_router.include_router(sessions_mub.router, prefix="/mub/users/{user_id}/sessions")
+
+app.include_router(mub_router, dependencies=[MUBProtection])
 
 # Proxy
 app.include_router(proxy_rst.router, prefix="/proxy/auth")

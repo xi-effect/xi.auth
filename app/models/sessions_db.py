@@ -63,7 +63,7 @@ class Session(Base):
         columns=[id, created, expiry, disabled],
         properties=[invalid],
     )
-    MubFullModel = FullModel.extend(columns=[mub])
+    MUBFullModel = FullModel.extend(columns=[mub])
 
     def is_renewal_required(self) -> bool:
         return self.expiry - self.renew_period_length < datetime.utcnow()
