@@ -15,6 +15,7 @@ from app.common.config import (
     TESTING_MODE,
 )
 from supbot.main import telegram_app
+from supbot.texts import BOT_COMMANDS
 
 
 async def run_telegram_polling(polling_timeout: int = 30) -> None:
@@ -30,7 +31,7 @@ async def run_telegram_polling(polling_timeout: int = 30) -> None:
             get_updates.offset = update.update_id + 1
 
 
-def maybe_initialize_telegram_app() -> None:
+async def maybe_initialize_telegram_app() -> None:
     if (
         not TESTING_MODE
         and SUPBOT_TOKEN is not None
@@ -44,6 +45,7 @@ def maybe_initialize_telegram_app() -> None:
                 channel_id=int(SUPBOT_CHANNEL_ID),
             ),
         )
+        await telegram_app.bot.set_my_commands(BOT_COMMANDS)
         if SUPBOT_POLLING:
             create_task(run_telegram_polling())
     elif PRODUCTION_MODE:

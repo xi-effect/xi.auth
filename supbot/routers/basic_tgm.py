@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.filters import Command
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 
 from supbot import texts
@@ -8,7 +8,7 @@ from supbot.aiogram_extension import MessageExt
 router = Router()
 
 
-@router.message(Command("start"))
+@router.message(CommandStart())
 async def start_conversation(message: MessageExt) -> None:
     await message.answer(texts.START_MESSAGE)
 

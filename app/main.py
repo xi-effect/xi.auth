@@ -41,7 +41,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
     rabbit_connection = await connect_rabbit()
 
-    maybe_initialize_telegram_app()
+    await maybe_initialize_telegram_app()
 
     yield
 
