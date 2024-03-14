@@ -1,8 +1,6 @@
-from asyncio import AbstractEventLoop, get_running_loop
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from aio_pika import connect_robust
 from fastapi import APIRouter, FastAPI
 from starlette.requests import Request
 from starlette.responses import Response
@@ -10,11 +8,7 @@ from starlette.responses import Response
 from app.common.config import (
     AVATARS_PATH,
     DATABASE_MIGRATED,
-    MQ_URL,
     PRODUCTION_MODE,
-    Base,
-    engine,
-    pochta_producer,
     sessionmaker,
 )
 from app.common.sqla import session_context
@@ -28,27 +22,30 @@ from app.routes import (
     reglog_rst,
     sessions_mub,
     sessions_rst,
+    supbot_rst,
     users_mub,
     users_rst,
 )
 from app.utils.cors import CorrectCORSMiddleware
 from app.utils.mub import MUBProtection
+from app.utils.setup import connect_rabbit, reinit_database
+from supbot.setup import maybe_initialize_telegram_app
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    if not PRODUCTION_MODE and not DATABASE_MIGRATED:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
-            await conn.run_sync(Base.metadata.create_all)
-
-    loop: AbstractEventLoop = get_running_loop()
-    connection = await connect_robust(MQ_URL, loop=loop)
-    await pochta_producer.connect(connection)
     AVATARS_PATH.mkdir(exist_ok=True)
 
+    if not PRODUCTION_MODE and not DATABASE_MIGRATED:
+        await reinit_database()
+
+    rabbit_connection = await connect_rabbit()
+
+    await maybe_initialize_telegram_app()
+
     yield
-    await connection.close()
+
+    await rabbit_connection.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -70,6 +67,7 @@ app.include_router(avatar_rst.router, prefix="/api/users/current/avatar")
 app.include_router(sessions_rst.router, prefix="/api/sessions")
 app.include_router(password_reset_rst.router, prefix="/api/password-reset")
 app.include_router(forms_rst.router, prefix="/api")
+app.include_router(supbot_rst.router, prefix="/api/telegram")
 
 # MUB
 mub_router = APIRouter()
