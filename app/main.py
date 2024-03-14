@@ -23,6 +23,7 @@ from app.routes import (
     current_user_rst,
     forms_rst,
     onboarding_rst,
+    password_reset_rst,
     proxy_rst,
     reglog_rst,
     sessions_mub,
@@ -67,6 +68,7 @@ app.include_router(users_rst.router, prefix="/api/users")
 app.include_router(current_user_rst.router, prefix="/api/users/current")
 app.include_router(avatar_rst.router, prefix="/api/users/current/avatar")
 app.include_router(sessions_rst.router, prefix="/api/sessions")
+app.include_router(password_reset_rst.router, prefix="/api/password-reset")
 app.include_router(forms_rst.router, prefix="/api")
 
 # MUB
