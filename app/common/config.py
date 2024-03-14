@@ -23,6 +23,9 @@ MQ_URL: str = getenv("MQ_URL", "amqp://guest:guest@localhost/")
 MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
 
 DEMO_WEBHOOK_URL: str | None = getenv("DEMO_WEBHOOK_URL", None)
+VACANCY_WEBHOOK_URL: str | None = getenv("VACANCY_WEBHOOK_URL", None)
+
+MUB_KEY: str = getenv("MUB_KEY", "local")
 
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323

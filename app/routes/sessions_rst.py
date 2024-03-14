@@ -49,7 +49,11 @@ class SessionResponses(Responses):
     "/{session_id}/", responses=SessionResponses.responses(), status_code=204
 )
 async def disable_session(session_id: int, user: AuthorizedUser) -> None:
-    session = await Session.find_first_by_kwargs(id=session_id, user_id=user.id)
+    session = await Session.find_first_by_kwargs(
+        id=session_id,
+        user_id=user.id,
+        mub=False,
+    )
     if session is None:
         raise SessionResponses.SESSION_NOT_FOUND.value
     session.disabled = True

@@ -15,10 +15,14 @@ AUTH_HEADER_NAME: Final[str] = "X-XI-ID"
 AUTH_COOKIE_NAME: Final[str] = "xi_id_token"
 TEST_HEADER_NAME: Final[str] = "X-Testing"
 
-header_auth_scheme = APIKeyHeader(name=AUTH_HEADER_NAME, auto_error=False)
+header_auth_scheme = APIKeyHeader(
+    name=AUTH_HEADER_NAME, auto_error=False, scheme_name="auth header"
+)
 AuthHeader = Annotated[str | None, Depends(header_auth_scheme)]
 
-cookie_auth_scheme = APIKeyCookie(name=AUTH_COOKIE_NAME, auto_error=False)
+cookie_auth_scheme = APIKeyCookie(
+    name=AUTH_COOKIE_NAME, auto_error=False, scheme_name="auth cookie"
+)
 AuthCookie = Annotated[str | None, Depends(cookie_auth_scheme)]
 
 

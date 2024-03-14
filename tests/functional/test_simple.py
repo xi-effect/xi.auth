@@ -2,15 +2,18 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import pytest
-from pydantic import constr
 from starlette.testclient import TestClient
 
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
 from tests.conftest import ActiveSession
-from tests.functional.test_reglog import COOKIE_REGEX, assert_session_cookie
-from tests.utils import PytestRequest, assert_nodata_response, assert_response
+from tests.utils import (
+    PytestRequest,
+    assert_nodata_response,
+    assert_response,
+    assert_session_from_cookie,
+)
 
 
 @pytest.mark.anyio()
@@ -35,7 +38,7 @@ async def test_requesting_proxy_auth(
         authorized_client.get("/proxy/auth/"),
         expected_headers={
             "X-User-ID": str(user.id),
-            "X-Username": str(user.username),
+            "X-Username": user.username,
             "X-Session-ID": str(session.id),
         },
     )
@@ -73,14 +76,17 @@ async def test_renewing_session_in_proxy_auth(
 
     response = assert_nodata_response(
         authorized_client.get("/proxy/auth/"),
+        expected_cookies={AUTH_COOKIE_NAME: str},
         expected_headers={
             "X-User-ID": str(user.id),
-            "X-Username": str(user.username),
+            "X-Username": user.username,
             "X-Session-ID": str(session.id),
-            "Set-Cookie": constr(pattern=COOKIE_REGEX),
         },
     )
-    await assert_session_cookie(response, cross_site)
+
+    async with active_session():
+        session_from_cookie = await assert_session_from_cookie(response, cross_site)
+        assert session_from_cookie.id == session.id
 
 
 @pytest.fixture(

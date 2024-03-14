@@ -9,7 +9,9 @@ from tests.conftest import ActiveSession, Factory
 from tests.utils import assert_nodata_response, assert_response
 
 
-def session_checker(session: Session, invalid: bool = False) -> TypeChecker:
+def session_checker(
+    session: Session, check_mub: bool = False, invalid: bool = False
+) -> TypeChecker:
     return {
         "id": session.id,
         "created": session.created,
@@ -17,6 +19,7 @@ def session_checker(session: Session, invalid: bool = False) -> TypeChecker:
         "disabled": invalid,
         "invalid": invalid,
         "token": None,
+        "mub": session.mub if check_mub else None,
     }
 
 

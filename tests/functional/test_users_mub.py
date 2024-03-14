@@ -11,12 +11,12 @@ from tests.utils import assert_nodata_response, assert_response
 
 @pytest.mark.anyio()
 async def test_user_creation(
-    client: TestClient,
+    mub_client: TestClient,
     active_session: ActiveSession,
     user_data: dict[str, Any],
 ) -> None:
     user_id: int = assert_response(
-        client.post("/mub/users/", json=user_data),
+        mub_client.post("/mub/users/", json=user_data),
         expected_json={**user_data, "id": int, "password": None},
     ).json()["id"]
 
@@ -35,14 +35,14 @@ async def test_user_creation(
     ],
 )
 async def test_user_creation_conflict(
-    client: TestClient,
+    mub_client: TestClient,
     user_data: dict[str, Any],
     user: User,
     data_mod: dict[str, Any],
     error: str,
 ) -> None:
     assert_response(
-        client.post("/mub/users/", json={**user_data, **data_mod}),
+        mub_client.post("/mub/users/", json={**user_data, **data_mod}),
         expected_code=409,
         expected_json={"detail": error},
     )
@@ -50,10 +50,10 @@ async def test_user_creation_conflict(
 
 @pytest.mark.anyio()
 async def test_user_getting(
-    client: TestClient, user: User, user_data: dict[str, Any]
+    mub_client: TestClient, user: User, user_data: dict[str, Any]
 ) -> None:
     assert_response(
-        client.get(f"/mub/users/{user.id}/"),
+        mub_client.get(f"/mub/users/{user.id}/"),
         expected_json={**user_data, "id": user.id, "password": None},
     )
 
@@ -68,7 +68,7 @@ async def test_user_getting(
 )
 async def test_user_updating(
     faker: Faker,
-    client: TestClient,
+    mub_client: TestClient,
     user_data: dict[str, Any],
     user: User,
     pass_email: bool,
@@ -88,26 +88,26 @@ async def test_user_updating(
         )
 
     assert_response(
-        client.patch(f"/mub/users/{user.id}/", json=new_user_data),
+        mub_client.patch(f"/mub/users/{user.id}/", json=new_user_data),
         expected_json={**user_data, **new_user_data, "id": user.id, "password": None},
     )
 
 
 @pytest.mark.anyio()
-async def test_user_deleting(client: TestClient, user: User) -> None:
-    assert_nodata_response(client.delete(f"/mub/users/{user.id}/"))
+async def test_user_deleting(mub_client: TestClient, user: User) -> None:
+    assert_nodata_response(mub_client.delete(f"/mub/users/{user.id}/"))
 
 
 @pytest.mark.anyio()
 @pytest.mark.parametrize("method", ["GET", "PATCH", "DELETE"])
 async def test_user_not_found(
-    client: TestClient, user: User, active_session: ActiveSession, method: str
+    mub_client: TestClient, deleted_user: User, method: str
 ) -> None:
-    async with active_session():
-        await user.delete()
     assert_response(
-        client.request(
-            method, f"/mub/users/{user.id}/", json={} if method == "PATCH" else None
+        mub_client.request(
+            method,
+            f"/mub/users/{deleted_user.id}/",
+            json={} if method == "PATCH" else None,
         ),
         expected_code=404,
         expected_json={"detail": "User not found"},
@@ -116,14 +116,51 @@ async def test_user_not_found(
 
 @pytest.mark.anyio()
 async def test_user_updating_username_in_use(
-    authorized_client: TestClient,
+    mub_client: TestClient,
     user: User,
     other_user: User,
 ) -> None:
     assert_response(
-        authorized_client.patch(
+        mub_client.patch(
             f"/mub/users/{user.id}/", json={"username": other_user.username}
         ),
         expected_code=409,
         expected_json={"detail": "Username already in use"},
+    )
+
+
+@pytest.mark.anyio()
+async def test_user_creation_invalid_mub_key(
+    client: TestClient,
+    user_data: dict[str, Any],
+    invalid_mub_key_headers: dict[str, Any] | None,
+) -> None:
+    assert_response(
+        client.post(
+            "/mub/users/",
+            json=user_data,
+            headers=invalid_mub_key_headers,
+        ),
+        expected_json={"detail": "Invalid key"},
+        expected_code=401,
+    )
+
+
+@pytest.mark.parametrize("method", ["GET", "PATCH", "DELETE"])
+@pytest.mark.anyio()
+async def test_user_operations_invalid_mub_key(
+    client: TestClient,
+    user: User,
+    invalid_mub_key_headers: dict[str, Any] | None,
+    method: str,
+) -> None:
+    assert_response(
+        client.request(
+            method,
+            f"/mub/users/{user.id}/",
+            json={},
+            headers=invalid_mub_key_headers,
+        ),
+        expected_json={"detail": "Invalid key"},
+        expected_code=401,
     )
