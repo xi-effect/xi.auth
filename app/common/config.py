@@ -1,10 +1,12 @@
 from os import getenv
 from pathlib import Path
 
+from cryptography.fernet import Fernet
 from sqlalchemy import MetaData, NullPool
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
+from app.common.cryptography import CryptographyProvider
 from app.common.rabbit import RabbitDirectProducer
 from app.common.sqla import MappingBase
 
@@ -21,6 +23,10 @@ DB_SCHEMA: str | None = getenv("DB_SCHEMA", None)
 
 MQ_URL: str = getenv("MQ_URL", "amqp://guest:guest@localhost/")
 MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
+
+RESET_KEYS: list[str] = getenv(
+    "RESET_KEY", Fernet.generate_key().decode("utf-8")
+).split("|")
 
 DEMO_WEBHOOK_URL: str | None = getenv("DEMO_WEBHOOK_URL", None)
 VACANCY_WEBHOOK_URL: str | None = getenv("VACANCY_WEBHOOK_URL", None)
@@ -53,3 +59,4 @@ class Base(AsyncAttrs, DeclarativeBase, MappingBase):
 
 
 pochta_producer = RabbitDirectProducer(queue_name=MQ_POCHTA_QUEUE)
+cryptography_provider = CryptographyProvider(RESET_KEYS)
