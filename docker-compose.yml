@@ -76,6 +76,7 @@ services:
       - "5100:8000"
     volumes:
       - ./app:/backend/app
+      - ./supbot:/backend/supbot
       - ./tests:/backend/tests
     environment:
       WATCHFILES_FORCE_POLLING: true
