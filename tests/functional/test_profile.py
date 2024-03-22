@@ -78,7 +78,9 @@ async def test_changing_user_email(
 
     pochta_mock.assert_called_once()
     async with active_session():
-        assert (await get_db_user(user)).email == new_email
+        updated_user = await get_db_user(user)
+        assert updated_user.email == new_email
+        assert not updated_user.email_confirmed
 
 
 @pytest.mark.anyio()
