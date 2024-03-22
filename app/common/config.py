@@ -30,7 +30,7 @@ DB_SCHEMA: str | None = getenv("DB_SCHEMA", None)
 MQ_URL: str = getenv("MQ_URL", "amqp://guest:guest@localhost/")
 MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
 
-RESET_KEYS: list[str] = getenv(
+CRYPTOGRAPHY_KEYS: list[str] = getenv(
     "RESET_KEY", Fernet.generate_key().decode("utf-8")
 ).split("|")
 
@@ -71,4 +71,4 @@ class Base(AsyncAttrs, DeclarativeBase, MappingBase):
 
 
 pochta_producer = RabbitDirectProducer(queue_name=MQ_POCHTA_QUEUE)
-cryptography_provider = CryptographyProvider(RESET_KEYS)
+cryptography_provider = CryptographyProvider(CRYPTOGRAPHY_KEYS)

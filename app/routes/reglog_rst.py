@@ -2,7 +2,7 @@ from aio_pika import Message
 from fastapi import APIRouter, Response
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
-from app.common.config import pochta_producer
+from app.common.config import cryptography_provider, pochta_producer
 from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User
@@ -38,9 +38,12 @@ async def signup(
         raise UsernameResponses.USERNAME_IN_USE.value
 
     user = await User.create(**user_data.model_dump())
+    confirmation_token: str = cryptography_provider.encrypt(user.generate_token())
 
     await pochta_producer.send_message(
-        message=Message(f"hi {user_data.email}".encode("utf-8")),
+        message=Message(
+            f"hi {user_data.email}, verify email: {confirmation_token}".encode("utf-8")
+        ),
     )
 
     session = await Session.create(user=user, cross_site=cross_site)

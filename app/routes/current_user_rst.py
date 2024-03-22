@@ -2,10 +2,10 @@ from typing import Annotated
 
 from aio_pika import Message
 from fastapi import APIRouter
-from pydantic import Field
+from pydantic import BaseModel, Field
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from app.common.config import pochta_producer
+from app.common.config import cryptography_provider, pochta_producer
 from app.common.responses import Responses
 from app.models.users_db import User
 from app.utils.authorization import (
@@ -35,7 +35,7 @@ class UserPatchResponses(Responses):
 
 @router.patch(
     "/profile/",
-    response_model=User.FullModel,
+    response_model=User.VerifiedFullModel,
     responses=UserPatchResponses.responses(),
     summary="Update current user's profile data",
 )
@@ -72,13 +72,42 @@ async def change_user_email(user: AuthorizedUser, put_data: EmailChangeModel) ->
         raise PasswordProtectedResponses.WRONG_PASSWORD.value
 
     user.email = put_data.new_email
+    user.email_confirmed = False
+    confirmation_token: str = cryptography_provider.encrypt(user.generate_token())
+
     await pochta_producer.send_message(
         message=Message(
-            f"Your email has been changed to {put_data.new_email}".encode("utf-8")
+            f"Your email has been changed to {put_data.new_email}, "
+            f"confirm new email: {confirmation_token}".encode("utf-8")  # noqa: WPS326
         ),
     )
 
     return user
+
+
+class EmailConfirmationResponses(Responses):
+    EXPIRED_TOKEN = (HTTP_401_UNAUTHORIZED, "Token expired")
+
+
+class EmailConfirmationData(BaseModel):
+    confirmation_token: str
+
+
+@router.post(
+    "/email/confirmations/",
+    responses=EmailConfirmationResponses.responses(),
+    summary="Update current user's password",
+    status_code=204,
+)
+async def confirm_user_email(
+    user: AuthorizedUser, confirmation_token: EmailConfirmationData
+) -> None:
+    if (
+        cryptography_provider.decrypt(confirmation_token.confirmation_token, ttl=86400)
+        is None
+    ):
+        raise EmailConfirmationResponses.EXPIRED_TOKEN
+    user.email_confirmed = True
 
 
 @router.put(

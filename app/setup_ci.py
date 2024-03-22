@@ -1,6 +1,6 @@
 import asyncio
 
-from app.main import Base, engine  # type: ignore[attr-defined]
+from app.common.config import Base, engine
 
 
 async def create_database() -> None:

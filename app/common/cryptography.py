@@ -11,10 +11,11 @@ class CryptographyProvider:
     def encrypt(self, data: str) -> str:
         return self.encryptor.encrypt(msg=data.encode("utf-8")).decode("utf-8")
 
-    def decrypt(self, encrypted_data: bytes | str) -> str | None:
+    def decrypt(self, encrypted_data: bytes | str, ttl: int = 0) -> str | None:
+        encryption_ttl: int = self.encryption_ttl if ttl == 0 else ttl
         try:
-            return self.encryptor.decrypt(
-                encrypted_data, ttl=self.encryption_ttl
-            ).decode("utf-8")
+            return self.encryptor.decrypt(encrypted_data, ttl=encryption_ttl).decode(
+                "utf-8"
+            )
         except InvalidToken:
             return None

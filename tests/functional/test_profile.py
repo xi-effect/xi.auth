@@ -1,14 +1,15 @@
+import time
 from typing import Any
 
 import pytest
 from faker import Faker
 from starlette.testclient import TestClient
 
-from app.common.config import pochta_producer
+from app.common.config import cryptography_provider, pochta_producer
 from app.models.users_db import User
 from tests.conftest import ActiveSession
 from tests.mock_stack import MockStack
-from tests.utils import assert_response, get_db_user
+from tests.utils import assert_nodata_response, assert_response, get_db_user
 
 
 @pytest.mark.anyio()
@@ -78,7 +79,9 @@ async def test_changing_user_email(
 
     pochta_mock.assert_called_once()
     async with active_session():
-        assert (await get_db_user(user)).email == new_email
+        updated_user = await get_db_user(user)
+        assert updated_user.email == new_email
+        assert updated_user.email_confirmed is False
 
 
 @pytest.mark.anyio()
@@ -130,4 +133,60 @@ async def test_changing_user_password_wrong_password(
         ),
         expected_code=401,
         expected_json={"detail": "Wrong password"},
+    )
+
+
+@pytest.mark.anyio()
+async def test_confirming_user_email(
+    authorized_client: TestClient,
+    active_session: ActiveSession,
+    user: User,
+) -> None:
+    assert_nodata_response(
+        authorized_client.post(
+            "/api/users/current/email/confirmations/",
+            json={
+                "confirmation_token": cryptography_provider.encrypt(
+                    user.generate_token()
+                )
+            },
+        ),
+        expected_code=204,
+    )
+
+    async with active_session():
+        assert (await get_db_user(user)).email_confirmed is True
+
+
+@pytest.mark.anyio()
+async def test_confirming_user_email_invalid_token(
+    faker: Faker,
+    authorized_client: TestClient,
+) -> None:
+    assert_response(
+        authorized_client.post(
+            "/api/users/current/email/confirmations/",
+            json={"confirmation_token": faker.text()},
+        ),
+        expected_code=401,
+        expected_json={"detail": "Token expired"},
+    )
+
+
+@pytest.mark.anyio()
+async def test_confirming_user_email_expired_token(
+    faker: Faker,
+    authorized_client: TestClient,
+) -> None:
+    expired_confirmation_token: bytes = cryptography_provider.encryptor.encrypt_at_time(
+        faker.text().encode("utf-8"), current_time=int(time.time()) - 86400 - 1
+    )
+
+    assert_response(
+        authorized_client.post(
+            "/api/users/current/email/confirmations/",
+            json={"confirmation_token": expired_confirmation_token.decode("utf-8")},
+        ),
+        expected_code=401,
+        expected_json={"detail": "Token expired"},
     )
