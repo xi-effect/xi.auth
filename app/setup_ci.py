@@ -1,6 +1,7 @@
 import asyncio
 
-from app.main import Base, engine  # type: ignore[attr-defined]
+import app.main  # noqa: F401 WPS301
+from app.common.config import Base, engine
 
 
 async def create_database() -> None:
