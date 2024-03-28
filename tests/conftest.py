@@ -3,8 +3,9 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol, TypeVar
 
 import pytest
+import rstr
 from faker import Faker
-from faker.providers import internet
+from faker.providers import BaseProvider, internet
 from faker_file.providers import webp_file  # type: ignore[import-untyped]
 from fastapi.testclient import TestClient
 from sqlalchemy import delete
@@ -33,10 +34,19 @@ def anyio_backend() -> str:
     return "asyncio"
 
 
+class RegexGeneratorProvider(BaseProvider):
+    def generate_regex(self, pattern: str) -> str:
+        return rstr.xeger(pattern)
+
+    def username(self) -> str:
+        return self.generate_regex("^[a-z0-9_.]{4,30}$")
+
+
 @pytest.fixture(autouse=True)
 def _setup_faker(faker: Faker) -> None:
     faker.add_provider(internet)
     faker.add_provider(webp_file.GraphicWebpFileProvider)
+    faker.add_provider(RegexGeneratorProvider)
 
 
 class ActiveSession(Protocol):
@@ -71,7 +81,7 @@ def client() -> Iterator[TestClient]:
 @pytest.fixture()
 async def user_data(faker: Faker) -> dict[str, Any]:
     return {
-        "username": faker.profile(fields=["username"])["username"],
+        "username": faker.username(),
         "email": faker.email(),
         "password": faker.password(),
     }
@@ -94,7 +104,7 @@ async def other_user(
 ) -> User:
     async with active_session():
         return await User.create(
-            username=faker.profile(fields=["username"])["username"],
+            username=faker.username(),
             email=faker.email(),
             password=User.generate_hash(faker.password()),
         )

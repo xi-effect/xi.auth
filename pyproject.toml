@@ -57,6 +57,7 @@ coverage = "^7.3.2"
 pytest-cov = "^4.1.0"
 pillow = "9.5.0"
 faker-file = "^0.17.11"
+rstr = "3.2.2"
 
 [tool.isort]
 profile = "black"

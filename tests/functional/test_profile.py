@@ -1,3 +1,4 @@
+from string import whitespace
 from typing import Any
 
 import pytest
@@ -30,7 +31,7 @@ async def test_profile_updating(
 ) -> None:
     update_data: dict[str, Any] = {}
     if pass_username:
-        update_data["username"] = faker.profile(fields=["username"])["username"]
+        update_data["username"] = faker.username()
     if pass_display_name:
         update_data["display_name"] = faker.name()
     if pass_theme:
@@ -53,6 +54,74 @@ async def test_profile_updating_conflict(
         ),
         expected_code=409,
         expected_json={"detail": "Username already in use"},
+    )
+
+
+@pytest.mark.anyio()
+async def test_profile_updating_invalid_username(
+    faker: Faker,
+    authorized_client: TestClient,
+) -> None:
+    invalid_username = faker.generate_regex("^[^a-z0-9_.]{4,30}$")
+
+    assert_response(
+        authorized_client.patch(
+            "/api/users/current/profile/", json={"username": invalid_username}
+        ),
+        expected_code=422,
+        expected_json={
+            "detail": [{"type": "string_pattern_mismatch", "input": invalid_username}]
+        },
+    )
+
+
+@pytest.mark.anyio()
+async def test_profile_updating_display_name_with_whitespaces(
+    faker: Faker,
+    authorized_client: TestClient,
+    user_data: dict[str, Any],
+    user: User,
+) -> None:
+    new_display_name: str = faker.name()
+    whitespace_sym: str = faker.random_element(elements=whitespace)
+
+    assert_response(
+        authorized_client.patch(
+            "/api/users/current/profile/",
+            json={
+                "display_name": f"{whitespace_sym}{new_display_name}{whitespace_sym}"
+            },
+        ),
+        expected_json={
+            **user_data,
+            "id": user.id,
+            "display_name": new_display_name,
+            "password": None,
+        },
+    )
+
+
+@pytest.mark.anyio()
+@pytest.mark.parametrize(
+    "length_display_name",
+    [
+        pytest.param(1, id="short_display_name"),
+        pytest.param(40, id="long_display_name"),
+    ],
+)
+async def test_profile_updating_invalid_display_name(
+    faker: Faker,
+    authorized_client: TestClient,
+    length_display_name: str,
+) -> None:
+    invalid_display_name = "".join(faker.random_letters(length_display_name))
+
+    assert_response(
+        authorized_client.patch(
+            "/api/users/current/profile/", json={"display_name": invalid_display_name}
+        ),
+        expected_code=422,
+        expected_json={"detail": [{"input": invalid_display_name}]},
     )
 
 
