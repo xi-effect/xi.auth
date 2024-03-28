@@ -2,10 +2,11 @@ from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from magic_filter import F
 
 from app.routes.forms_rst import VacancyFormSchema, apply_for_vacancy
+from supbot import texts
 from supbot.aiogram_extension import MessageExt
 
 router = Router()
@@ -26,44 +27,35 @@ class VacancyApplication(StatesGroup):
     VacancyApplication.sending_resume,
     VacancyApplication.sending_message,
 )
-@router.message(F.text == "Выйти из опроса")
+@router.message(F.text == texts.EXIT)
 async def handle_exit(message: MessageExt, state: FSMContext) -> None:
     await message.answer(
-        text="Будем ждать вас снова!", reply_markup=ReplyKeyboardRemove()
+        text=texts.HANDLE_EXIT_MESSAGE, reply_markup=ReplyKeyboardRemove()
     )
     await state.clear()
 
 
 @router.message(Command("vacancy"), F.chat.type == "private")
-@router.message(VacancyApplication.sending_name, F.text == "Назад")
+@router.message(VacancyApplication.sending_name, F.text == texts.BACK)
 async def choose_vacancy(message: MessageExt, state: FSMContext) -> None:
     await state.set_state(VacancyApplication.choosing_vacancy)
     await message.answer(
-        text="Выберите вакансию или введите свою",
+        text=texts.CHOOSE_VACANCY_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="Frontend разработчик")],
-                [KeyboardButton(text="Backend разработчик")],
-                [KeyboardButton(text="Графический дизайнер")],
-                [KeyboardButton(text="Product manager")],
-                [KeyboardButton(text="SMM-специалист")],
-                [KeyboardButton(text="Выйти из опроса")],
-            ],
+            keyboard=texts.VACANCY_CHOOSE_KEYBOARD_MARKUP,
             resize_keyboard=True,
         ),
     )
 
 
 @router.message(VacancyApplication.choosing_vacancy, F.text)
-@router.message(VacancyApplication.sending_telegram, F.text == "Назад")
+@router.message(VacancyApplication.sending_telegram, F.text == texts.BACK)
 async def send_name(message: MessageExt, state: FSMContext) -> None:
     await state.update_data(vacancy=message.text)
     await message.answer(
-        text="Как в вам можно обращаться?",
+        text=texts.SEND_NAME_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="Назад"), KeyboardButton(text="Выйти из опроса")]
-            ],
+            keyboard=texts.NAVIGATION_KEYBOARD_MARKUP,
             resize_keyboard=True,
         ),
     )
@@ -71,27 +63,24 @@ async def send_name(message: MessageExt, state: FSMContext) -> None:
 
 
 @router.message(VacancyApplication.sending_name, F.text)
-@router.message(VacancyApplication.sending_resume, F.text == "Назад")
+@router.message(VacancyApplication.sending_resume, F.text == texts.BACK)
 async def send_telegram(message: MessageExt, state: FSMContext) -> None:
     await state.update_data(name=message.text)
     await state.set_state(VacancyApplication.sending_telegram)
     await message.answer(
-        text="Ваш телеграм для обратной связи",
+        text=texts.SEND_TELEGRAM_MESSSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="Оставить свой текущий аккаунт")],
-                [KeyboardButton(text="Назад"), KeyboardButton(text="Выйти из опроса")],
-            ],
+            keyboard=texts.SEND_TELEGRAM_KEYBOARD_MARKUP,
             resize_keyboard=True,
         ),
     )
 
 
 @router.message(VacancyApplication.sending_telegram, F.text)
-@router.message(VacancyApplication.sending_message, F.text == "Назад")
+@router.message(VacancyApplication.sending_message, F.text == texts.BACK)
 async def send_resume(message: MessageExt, state: FSMContext) -> None:
     if (
-        message.text == "Оставить свой текущий аккаунт"
+        message.text == texts.SEND_TELEGRAM_KEYBOARD_TEXT
         and message.from_user is not None
     ):
         await state.update_data(
@@ -101,11 +90,9 @@ async def send_resume(message: MessageExt, state: FSMContext) -> None:
         await state.update_data(telegram=message.text)
 
     await message.answer(
-        text="Ссылка на ваше резюме",
+        text=texts.SEND_RESUME_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="Назад"), KeyboardButton(text="Выйти из опроса")]
-            ],
+            keyboard=texts.NAVIGATION_KEYBOARD_MARKUP,
             resize_keyboard=True,
         ),
     )
@@ -113,16 +100,13 @@ async def send_resume(message: MessageExt, state: FSMContext) -> None:
 
 
 @router.message(VacancyApplication.sending_resume)
-@router.message(VacancyApplication.sending_message, F.text == "Назад")
-async def send_message(message: MessageExt, state: FSMContext) -> None:
+@router.message(VacancyApplication.sending_message, F.text == texts.BACK)
+async def send_info(message: MessageExt, state: FSMContext) -> None:
     await state.update_data(resume=message.text)
     await message.answer(
-        text="Почти готово. Можете оставить для нас сообщение :)",
+        text=texts.SEND_INFO_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[
-                [KeyboardButton(text="Пропустить")],
-                [KeyboardButton(text="Назад"), KeyboardButton(text="Выйти из опроса")],
-            ],
+            keyboard=texts.NAVIGATION_KEYBOARD_MARKUP_WITH_SKIP,
             resize_keyboard=True,
         ),
     )
@@ -131,7 +115,7 @@ async def send_message(message: MessageExt, state: FSMContext) -> None:
 
 @router.message(VacancyApplication.sending_message, F.text)
 async def final(message: MessageExt, state: FSMContext) -> None:
-    if message.text != "Пропустить":
+    if message.text != texts.SKIP:
         await state.update_data(message=message.text)
 
     answers = await state.get_data()
@@ -146,7 +130,7 @@ async def final(message: MessageExt, state: FSMContext) -> None:
     )
 
     await message.answer(
-        text="Спасибо! Мы обязательно рассмотрим ваш отклик и ответим.",
+        text=texts.VACANCY_FINAL_MESSAGE,
         reply_markup=ReplyKeyboardRemove(),
     )
     await state.clear()
