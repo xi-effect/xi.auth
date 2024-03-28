@@ -4,7 +4,7 @@ import pytest
 from faker import Faker
 from starlette.testclient import TestClient
 
-from app.common.config import cryptography_provider, pochta_producer
+from app.common.config import password_reset_cryptography, pochta_producer
 from app.models.users_db import User
 from tests.conftest import ActiveSession
 from tests.mock_stack import MockStack
@@ -57,7 +57,7 @@ async def test_confirming_password_reset(
         client.post(
             "/api/password-reset/confirmations/",
             json={
-                "reset_token": cryptography_provider.encrypt(reset_token),
+                "reset_token": password_reset_cryptography.encrypt(reset_token),
                 "new_password": new_password,
             },
         ),
@@ -94,9 +94,9 @@ async def test_confirming_password_reset_expired_token(
 ) -> None:
     async with active_session():
         reset_token: str = (await get_db_user(user)).generated_reset_token
-    expired_reset_token: bytes = cryptography_provider.encryptor.encrypt_at_time(
+    expired_reset_token: bytes = password_reset_cryptography.encryptor.encrypt_at_time(
         msg=reset_token.encode("utf-8"),
-        current_time=int(time.time()) - cryptography_provider.encryption_ttl - 1,
+        current_time=int(time.time()) - password_reset_cryptography.encryption_ttl - 1,
     )
 
     assert_response(
@@ -121,7 +121,7 @@ async def test_confirming_password_reset_no_started_reset(
         client.post(
             "/api/password-reset/confirmations/",
             json={
-                "reset_token": cryptography_provider.encrypt(faker.text()),
+                "reset_token": password_reset_cryptography.encrypt(faker.text()),
                 "new_password": faker.password(),
             },
         ),

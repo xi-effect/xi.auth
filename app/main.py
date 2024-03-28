@@ -15,6 +15,7 @@ from app.common.sqla import session_context
 from app.routes import (
     avatar_rst,
     current_user_rst,
+    email_confirmation_rst,
     forms_rst,
     onboarding_rst,
     password_reset_rst,
@@ -66,6 +67,7 @@ app.include_router(current_user_rst.router, prefix="/api/users/current")
 app.include_router(avatar_rst.router, prefix="/api/users/current/avatar")
 app.include_router(sessions_rst.router, prefix="/api/sessions")
 app.include_router(password_reset_rst.router, prefix="/api/password-reset")
+app.include_router(email_confirmation_rst.router, prefix="/api/email-confirmation")
 app.include_router(forms_rst.router, prefix="/api")
 app.include_router(supbot_rst.router, prefix="/api/telegram")
 
