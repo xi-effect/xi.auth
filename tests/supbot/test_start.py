@@ -25,6 +25,7 @@ class MessageExt(Message):
 
 @pytest.mark.anyio()
 async def test_tg_starting(
+    faker: Faker,
     webhook_updater: WebhookUpdater,
     mocked_bot: MockedBot,
 ) -> None:
@@ -40,6 +41,11 @@ async def test_tg_starting(
                 chat=Chat(
                     id=chat_id,
                     type="private",
+                ),
+                from_user=User(
+                    id=id_provider.generate_id(),
+                    is_bot=False,
+                    first_name=faker.name(),
                 ),
             ),
         )
