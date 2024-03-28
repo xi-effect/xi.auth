@@ -60,6 +60,7 @@ pytest-cov = "^4.1.0"
 pillow = "9.5.0"
 faker-file = "^0.17.11"
 watchfiles = "^0.21.0"
+polyfactory = "^2.15.0"
 
 [tool.isort]
 profile = "black"

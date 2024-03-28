@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.base import StorageKey
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.methods import TelegramMethod
 from aiogram.types import Update
@@ -138,3 +139,26 @@ def mocked_bot(mock_stack: MockStack, bot: Bot, bot_id: int) -> MockedBot:
 def bot_storage(base_bot_storage: MemoryStorage) -> Iterable[MemoryStorage]:
     yield base_bot_storage
     base_bot_storage.storage.clear()
+
+
+@pytest.fixture()
+def tg_user_id() -> int:
+    return id_provider.generate_id()
+
+
+@pytest.fixture()
+def tg_chat_id() -> int:
+    return id_provider.generate_id()
+
+
+@pytest.fixture()
+def bot_storage_key(
+    mocked_bot: MockedBot,
+    tg_user_id: int,
+    tg_chat_id: int,
+) -> StorageKey:
+    return StorageKey(
+        bot_id=mocked_bot.id,
+        chat_id=tg_chat_id,
+        user_id=tg_user_id,
+    )
