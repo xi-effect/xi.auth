@@ -12,5 +12,6 @@ RUN poetry install --no-interaction --no-ansi --only main
 COPY ./alembic.ini /backend/alembic.ini
 COPY ./alembic /backend/alembic
 COPY ./app /backend/app
+COPY ./supbot /backend/supbot
 
 ENTRYPOINT ["uvicorn", "app.main:app", "--host", "0.0.0.0"]

@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import Field
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from app.common.config import pochta_producer
+from app.common.config import email_confirmation_cryptography, pochta_producer
 from app.common.responses import Responses
 from app.models.users_db import User
 from app.utils.authorization import (
@@ -72,9 +72,15 @@ async def change_user_email(user: AuthorizedUser, put_data: EmailChangeModel) ->
         raise PasswordProtectedResponses.WRONG_PASSWORD.value
 
     user.email = put_data.new_email
+    user.email_confirmed = False
+
+    confirmation_token: str = email_confirmation_cryptography.encrypt(user.email)
     await pochta_producer.send_message(
         message=Message(
-            f"Your email has been changed to {put_data.new_email}".encode("utf-8")
+            (
+                f"Your email has been changed to {put_data.new_email},"
+                + f"confirm new email: {confirmation_token}"
+            ).encode("utf-8")
         ),
     )
 

@@ -44,6 +44,8 @@ class User(Base):
     reset_token: Mapped[str | None] = mapped_column(CHAR(token_length))
     last_password_change: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
+    email_confirmed: Mapped[bool] = mapped_column(default=False)
+
     __table_args__ = (
         Index("hash_index_users_username", username, postgresql_using="hash"),
         Index("hash_index_users_email", email, postgresql_using="hash"),
@@ -72,7 +74,9 @@ class User(Base):
         columns=[(username, UsernameType), display_name, theme]
     )
     ProfilePatchModel = ProfileModel.as_patch()
-    FullModel = ProfileModel.extend(columns=[id, email, onboarding_stage])
+    FullModel = ProfileModel.extend(
+        columns=[id, email, email_confirmed, onboarding_stage]
+    )
     FullPatchModel = InputModel.extend(
         columns=[display_name, theme, onboarding_stage]
     ).as_patch()

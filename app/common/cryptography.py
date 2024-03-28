@@ -2,7 +2,7 @@ from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
 
 class CryptographyProvider:
-    def __init__(self, fernet_key_list: list[str], encryption_ttl: int = 3600) -> None:
+    def __init__(self, fernet_key_list: list[str], encryption_ttl: int) -> None:
         self.encryptor = MultiFernet(
             (Fernet(key.encode("utf-8")) for key in fernet_key_list)
         )

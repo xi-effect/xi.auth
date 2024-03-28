@@ -1,7 +1,9 @@
 from os import getenv
 from pathlib import Path
+from sys import modules
 
 from cryptography.fernet import Fernet
+from dotenv import load_dotenv
 from sqlalchemy import MetaData, NullPool
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -12,10 +14,14 @@ from app.common.sqla import MappingBase
 
 current_directory: Path = Path.cwd()
 
+load_dotenv(current_directory / ".env")
+
 AVATARS_PATH: Path = current_directory / "avatars"
 
-COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
+TESTING_MODE: bool = "pytest" in modules
+
+COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
 DATABASE_MIGRATED: bool = getenv("DATABASE_MIGRATED", "0") == "1"
 
 DB_URL: str = getenv("DB_LINK", "postgresql+asyncpg://test:test@localhost:5432/test")
@@ -24,14 +30,24 @@ DB_SCHEMA: str | None = getenv("DB_SCHEMA", None)
 MQ_URL: str = getenv("MQ_URL", "amqp://guest:guest@localhost/")
 MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
 
-RESET_KEYS: list[str] = getenv(
-    "RESET_KEY", Fernet.generate_key().decode("utf-8")
+PASSWORD_RESET_KEYS: list[str] = getenv(
+    "PASSWORD_RESET_KEYS", Fernet.generate_key().decode("utf-8")
+).split("|")
+
+EMAIL_CONFIRMATION_KEYS: list[str] = getenv(
+    "EMAIL_CONFIRMATION_KEYS", Fernet.generate_key().decode("utf-8")
 ).split("|")
 
 DEMO_WEBHOOK_URL: str | None = getenv("DEMO_WEBHOOK_URL", None)
 VACANCY_WEBHOOK_URL: str | None = getenv("VACANCY_WEBHOOK_URL", None)
 
 MUB_KEY: str = getenv("MUB_KEY", "local")
+
+SUPBOT_TOKEN: str | None = getenv("SUPBOT_TOKEN")
+SUPBOT_GROUP_ID: str | None = getenv("SUPBOT_GROUP_ID")
+SUPBOT_CHANNEL_ID: str | None = getenv("SUPBOT_CHANNEL_ID")
+SUPBOT_POLLING: bool = getenv("SUPBOT_POLLING", "0") == "1"
+SUPBOT_WEBHOOK_URL: str = getenv("SUPBOT_WEBHOOK_URL", "http://localhost:5100")
 
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
@@ -59,4 +75,12 @@ class Base(AsyncAttrs, DeclarativeBase, MappingBase):
 
 
 pochta_producer = RabbitDirectProducer(queue_name=MQ_POCHTA_QUEUE)
-cryptography_provider = CryptographyProvider(RESET_KEYS)
+
+password_reset_cryptography = CryptographyProvider(
+    PASSWORD_RESET_KEYS,
+    encryption_ttl=60 * 60,
+)
+email_confirmation_cryptography = CryptographyProvider(
+    EMAIL_CONFIRMATION_KEYS,
+    encryption_ttl=60 * 60 * 24,
+)

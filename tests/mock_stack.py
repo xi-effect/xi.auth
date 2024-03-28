@@ -1,7 +1,6 @@
-from asyncio import Future
 from contextlib import ExitStack
 from typing import Any, overload
-from unittest.mock import Mock, PropertyMock, patch
+from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
@@ -57,7 +56,7 @@ class MockStack(ExitStack):
         /,
         *,
         return_value: Any | None = None,
-    ) -> Mock:
+    ) -> AsyncMock:
         ...
 
     @overload
@@ -67,7 +66,7 @@ class MockStack(ExitStack):
         /,
         *,
         return_value: Any | None = None,
-    ) -> Mock:
+    ) -> AsyncMock:
         ...
 
     def enter_async_mock(
@@ -76,10 +75,8 @@ class MockStack(ExitStack):
         attribute: str | None = None,
         *,
         return_value: Any | None = None,
-    ) -> Mock:
-        wrapper: Future[Any] = Future()
-        wrapper.set_result(return_value)
-        mock = Mock(return_value=wrapper)
+    ) -> AsyncMock:
+        mock = AsyncMock(return_value=return_value)
         if attribute is None:
             return self.enter_context(patch(target, mock))
         return self.enter_context(patch.object(target, attribute, mock))

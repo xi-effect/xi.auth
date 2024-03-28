@@ -50,7 +50,9 @@ repos:
         entry: mypy
         args:
           - "--strict"
+          - "."
         require_serial: true
+        pass_filenames: false
         types_or: [python, pyi]
 
   - repo: https://github.com/python-poetry/poetry
