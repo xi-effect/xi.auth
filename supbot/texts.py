@@ -3,6 +3,7 @@ from aiogram.types import BotCommand, KeyboardButton
 BOT_COMMANDS: list[BotCommand] = [
     BotCommand(command="/echo", description="Тестовая команда"),
     BotCommand(command="/support", description="Обращение в поддержку"),
+    BotCommand(command="/vacancy", description="Попасть в команду"),
 ]
 
 START_MESSAGE = """
@@ -26,6 +27,8 @@ EXIT_SUPPORT_MESSAGE = """
 Обращение успешно закрыто
 """
 
+TELEGRAM_URL = "https://www.t.me"
+
 BACK = "Назад"
 EXIT = "Выйти"
 SKIP = "Пропустить"
@@ -40,26 +43,29 @@ NAVIGATION_KEYBOARD_MARKUP_WITH_SKIP: list[list[KeyboardButton]] = [
 ]
 
 # Vacancy form
-HANDLE_EXIT_MESSAGE = "Будем ждать вас снова!"
+EXIT_VACANCY_FORM_MESSAGE = "Будем ждать вас снова!"
 CHOOSE_VACANCY_MESSAGE = "Выберите вакансию или введите свою"
-SEND_NAME_MESSAGE = "Как в вам можно обращаться?"
-SEND_TELEGRAM_MESSSAGE = "Ваш телеграм для обратной связи"
+SEND_NAME_MESSAGE = "Как к вам можно обращаться?"
+SEND_TELEGRAM_MESSAGE = "Ваш телеграм для обратной связи"
 SEND_RESUME_MESSAGE = "Ссылка на ваше резюме"
 SEND_INFO_MESSAGE = "Почти готово. Можете оставить для нас сообщение :)"
 VACANCY_FINAL_MESSAGE = "Спасибо! Мы обязательно рассмотрим ваш отклик и ответим."
 
+VACANCIES = [
+    "Frontend разработчик",
+    "Backend разработчик",
+    "Графический дизайнер",
+    "Product manager",
+    "SMM-специалист",
+]
 VACANCY_CHOOSE_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
-    [KeyboardButton(text="Frontend разработчик")],
-    [KeyboardButton(text="Backend разработчик")],
-    [KeyboardButton(text="Графический дизайнер")],
-    [KeyboardButton(text="Product manager")],
-    [KeyboardButton(text="SMM-специалист")],
+    *[[KeyboardButton(text=VACANCY)] for VACANCY in VACANCIES],
     [KeyboardButton(text=EXIT)],
 ]
 
 
-SEND_TELEGRAM_KEYBOARD_TEXT = "Оставить свой текущий аккаунт"
+PROVIDE_CURRENT_ACCOUNT = "Оставить свой текущий аккаунт"
 SEND_TELEGRAM_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
-    [KeyboardButton(text=SEND_TELEGRAM_KEYBOARD_TEXT)],
+    [KeyboardButton(text=PROVIDE_CURRENT_ACCOUNT)],
     *NAVIGATION_KEYBOARD_MARKUP,
 ]

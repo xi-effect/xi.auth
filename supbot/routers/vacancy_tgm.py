@@ -1,9 +1,8 @@
-from aiogram import Router
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
-from magic_filter import F
 
 from app.routes.forms_rst import VacancyFormSchema, apply_for_vacancy
 from supbot import texts
@@ -17,7 +16,7 @@ class VacancyApplication(StatesGroup):
     sending_name = State()
     sending_telegram = State()
     sending_resume = State()
-    sending_message = State()
+    sending_info = State()
 
 
 @router.message(
@@ -25,12 +24,12 @@ class VacancyApplication(StatesGroup):
     VacancyApplication.sending_name,
     VacancyApplication.sending_telegram,
     VacancyApplication.sending_resume,
-    VacancyApplication.sending_message,
+    VacancyApplication.sending_info,
 )
 @router.message(F.text == texts.EXIT)
 async def handle_exit(message: MessageExt, state: FSMContext) -> None:
     await message.answer(
-        text=texts.HANDLE_EXIT_MESSAGE, reply_markup=ReplyKeyboardRemove()
+        text=texts.EXIT_VACANCY_FORM_MESSAGE, reply_markup=ReplyKeyboardRemove()
     )
     await state.clear()
 
@@ -38,7 +37,6 @@ async def handle_exit(message: MessageExt, state: FSMContext) -> None:
 @router.message(Command("vacancy"), F.chat.type == "private")
 @router.message(VacancyApplication.sending_name, F.text == texts.BACK)
 async def choose_vacancy(message: MessageExt, state: FSMContext) -> None:
-    await state.set_state(VacancyApplication.choosing_vacancy)
     await message.answer(
         text=texts.CHOOSE_VACANCY_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
@@ -46,6 +44,7 @@ async def choose_vacancy(message: MessageExt, state: FSMContext) -> None:
             resize_keyboard=True,
         ),
     )
+    await state.set_state(VacancyApplication.choosing_vacancy)
 
 
 @router.message(VacancyApplication.choosing_vacancy, F.text)
@@ -66,25 +65,22 @@ async def send_name(message: MessageExt, state: FSMContext) -> None:
 @router.message(VacancyApplication.sending_resume, F.text == texts.BACK)
 async def send_telegram(message: MessageExt, state: FSMContext) -> None:
     await state.update_data(name=message.text)
-    await state.set_state(VacancyApplication.sending_telegram)
     await message.answer(
-        text=texts.SEND_TELEGRAM_MESSSAGE,
+        text=texts.SEND_TELEGRAM_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
             keyboard=texts.SEND_TELEGRAM_KEYBOARD_MARKUP,
             resize_keyboard=True,
         ),
     )
+    await state.set_state(VacancyApplication.sending_telegram)
 
 
 @router.message(VacancyApplication.sending_telegram, F.text)
-@router.message(VacancyApplication.sending_message, F.text == texts.BACK)
+@router.message(VacancyApplication.sending_info, F.text == texts.BACK)
 async def send_resume(message: MessageExt, state: FSMContext) -> None:
-    if (
-        message.text == texts.SEND_TELEGRAM_KEYBOARD_TEXT
-        and message.from_user is not None
-    ):
+    if message.text == texts.PROVIDE_CURRENT_ACCOUNT and message.from_user is not None:
         await state.update_data(
-            telegram=f"https://www.t.me/{message.from_user.username}"
+            telegram=f"{texts.TELEGRAM_URL}/{message.from_user.username}"
         )
     else:
         await state.update_data(telegram=message.text)
@@ -100,7 +96,7 @@ async def send_resume(message: MessageExt, state: FSMContext) -> None:
 
 
 @router.message(VacancyApplication.sending_resume)
-@router.message(VacancyApplication.sending_message, F.text == texts.BACK)
+@router.message(VacancyApplication.sending_info, F.text == texts.BACK)
 async def send_info(message: MessageExt, state: FSMContext) -> None:
     await state.update_data(resume=message.text)
     await message.answer(
@@ -110,11 +106,11 @@ async def send_info(message: MessageExt, state: FSMContext) -> None:
             resize_keyboard=True,
         ),
     )
-    await state.set_state(VacancyApplication.sending_message)
+    await state.set_state(VacancyApplication.sending_info)
 
 
-@router.message(VacancyApplication.sending_message, F.text)
-async def final(message: MessageExt, state: FSMContext) -> None:
+@router.message(VacancyApplication.sending_info, F.text)
+async def finish_form(message: MessageExt, state: FSMContext) -> None:
     if message.text != texts.SKIP:
         await state.update_data(message=message.text)
 

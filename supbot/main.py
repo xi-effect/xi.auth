@@ -1,5 +1,5 @@
 from supbot.aiogram_extension import TelegramApp
-from supbot.routers import basic_tgm, vacancy_tgm, support_tgm
+from supbot.routers import basic_tgm, support_tgm, vacancy_tgm
 
 telegram_app = TelegramApp()
 
