@@ -82,7 +82,7 @@ async def test_user_updating(
         new_user_data["password"] = faker.password()
     if pass_profile_data:
         new_user_data.update(
-            username=faker.profile(fields=["username"])["username"],
+            username=faker.username(),
             display_name=faker.name(),
             theme="new_theme",
         )

@@ -20,6 +20,8 @@ python-multipart = "^0.0.9"
 filetype = "^1.2.0"
 cryptography = "^42.0.5"
 discord-webhook = {extras = ["async"], version = "^1.3.1"}
+aiogram = "^3.4.1"
+httpx = "^0.23.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -52,18 +54,20 @@ wemake-python-styleguide = "^0.17.0"
 types-passlib = "^1.7.7.13"
 pydantic-marshals = {extras = ["assert-contains"], version = "^0.3.5"}
 faker = "^19.6.2"
-httpx = "^0.23.0"
 freezegun = "^1.2.2"
 coverage = "^7.3.2"
 pytest-cov = "^4.1.0"
 pillow = "9.5.0"
 faker-file = "^0.17.11"
+rstr = "3.2.2"
+watchfiles = "^0.21.0"
+polyfactory = "^2.15.0"
 
 [tool.isort]
 profile = "black"
 py_version = 311
 combine_as_imports = true
-known_first_party = ["app", "tests"]
+known_first_party = ["app", "supbot", "tests"]
 no_lines_before = "LOCALFOLDER"
 reverse_relative = true
 line_length = 88
@@ -100,6 +104,8 @@ omit = [
   "alembic/*",
   "test/*",
   "app/common/sqla.py",
+  "app/utils/setup.py",
+  "supbot/setup.py",
   "app/setup_ci.py",
 ]
 

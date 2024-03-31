@@ -27,7 +27,7 @@ extend-ignore =
   # pydantic-marshals & SQLAlchemy
   VNE003 WPS115
   # weird
-  PIE803 C101 FNE008 N812 ANN101 ANN102 WPS110 WPS111 WPS114 VNE001 CM001
+  PIE803 C101 FNE008 N812 ANN101 ANN102 WPS110 WPS111 WPS114 WPS407 VNE001 CM001
   # broken
   PIE798 WPS226 WPS354 WPS432 WPS473 WPS507
   U100  # fails to understand `raise NotImplementedError` and overloading
@@ -35,12 +35,13 @@ extend-ignore =
   WPS465  # fails to understand pipe-unions for types
   WPS601  # fails to same-name class and instance attributes (pydantic & sqlalchemy)
   # to many
-  WPS201 WPS202 WPS204 WPS210 WPS214 WPS217 WPS218 WPS221 WPS235
+  WPS201 WPS202 WPS204 WPS210 WPS214 WPS217 WPS218 WPS221 WPS234 WPS235
 
   # don't block features
   WPS100  # utils is a module name
   WPS237 WPS305  # f-strings are the best
   WPS306  # python 2.x is deprecated
+  WPS347  # vague imports
   WPS402  # noqa exists for a reason
   WPS420 WPS604  # pass is a thing
   WPS430  # nested functions
@@ -49,6 +50,9 @@ extend-ignore =
   WPS600  # subclassing lowercase builtins
   WPS602  # @staticmethod
   WPS605  # methods with no arguments
+
+  # tastes differ
+  WPS337  # multiline conditions
 
 per-file-ignores =
   *test*: TN101 FNE005 SCS108 VNE001 WPS118 WPS202 WPS211 WPS317 WPS407 WPS425 WPS432 WPS440 WPS437 WPS441 WPS442 WPS507 WPS520 WPS609
