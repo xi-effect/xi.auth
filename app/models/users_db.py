@@ -5,7 +5,7 @@ from secrets import token_urlsafe
 from typing import Annotated, ClassVar
 
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
-from pydantic import AfterValidator, Field
+from pydantic import AfterValidator, Field, StringConstraints
 from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import CHAR, Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -55,7 +55,13 @@ class User(Base):
     PasswordType = Annotated[
         str, Field(min_length=6, max_length=100), AfterValidator(generate_hash)
     ]
-    UsernameType = Annotated[str, Field(pattern=r"[a-z0-9_\.]{5,30}")]
+    DisplaynameType = Annotated[
+        str | None,
+        StringConstraints(strip_whitespace=True),
+        Field(min_length=2, max_length=30),
+    ]
+    UsernameType = Annotated[str, Field(pattern="^[a-z0-9_.]{4,30}$")]
+
     EmailModel = MappedModel.create(
         columns=[email]
     )  # TODO (email, Annotated[str, AfterValidator(email_validator)]),
@@ -67,18 +73,16 @@ class User(Base):
     )
     PasswordModel = MappedModel.create(columns=[password])
     CredentialsModel = MappedModel.create(columns=[email, password])
-    UserProfileModel = MappedModel.create(
-        columns=[id, (username, UsernameType), display_name]
-    )
+    UserProfileModel = MappedModel.create(columns=[id, username, display_name])
     ProfileModel = MappedModel.create(
-        columns=[(username, UsernameType), display_name, theme]
+        columns=[(username, UsernameType), (display_name, DisplaynameType), theme]
     )
     ProfilePatchModel = ProfileModel.as_patch()
     FullModel = ProfileModel.extend(
         columns=[id, email, email_confirmed, onboarding_stage]
     )
     FullPatchModel = InputModel.extend(
-        columns=[display_name, theme, onboarding_stage]
+        columns=[(display_name, DisplaynameType), theme, onboarding_stage]
     ).as_patch()
 
     def is_password_valid(self, password: str) -> bool:

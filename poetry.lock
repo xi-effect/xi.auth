@@ -2839,6 +2839,18 @@ pygments = ">=2.13.0,<3.0.0"
 jupyter = ["ipywidgets (>=7.5.1,<9)"]
 
 [[package]]
+name = "rstr"
+version = "3.2.2"
+description = "Generate random strings in Python"
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "rstr-3.2.2-py3-none-any.whl", hash = "sha256:f39195d38da1748331eeec52f1276e71eb6295e7949beea91a5e9af2340d7b3b"},
+    {file = "rstr-3.2.2.tar.gz", hash = "sha256:c4a564d4dfb4472d931d145c43d1cf1ad78c24592142e7755b8866179eeac012"},
+]
+
+[[package]]
 name = "setuptools"
 version = "68.2.2"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -3472,4 +3484,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "dd165deba8507ac145a788c3af8f0bf304852422ac22e2caa5e353acd4daa3e8"
+content-hash = "3efe7ebed5ac7c463b7573467cd159d497acab74745892fb16056f2e682eb4ff"
