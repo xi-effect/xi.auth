@@ -6,6 +6,7 @@ from aiogram.fsm.storage.base import BaseStorage, StorageKey
 from aiogram.methods import SendMessage
 from aiogram.types import Chat
 from faker import Faker
+from pydantic_marshals.contains import assert_contains
 
 from supbot import texts
 from supbot.routers.vacancy_tgm import VacancyApplication
@@ -13,14 +14,17 @@ from tests.mock_stack import MockStack
 from tests.supbot.conftest import MockedBot, WebhookUpdater
 from tests.supbot.factories import MessageFactory, UpdateFactory, UserFactory
 
+NAVIGATION_KEYBOARD = {
+    "keyboard": [[{"text": texts.BACK}, {"text": texts.EXIT}]],
+}
+VACANCY_EPILOGUE_KEYBOARD = {
+    "keyboard": [[{"text": texts.CONTINUE_IN_BOT_KEYBOARD_TEXT}, {"text": texts.EXIT}]],
+}
 CHOOSE_VACANCY_KEYBOARD = {
     "keyboard": [
         *[[{"text": VACANCY}] for VACANCY in texts.VACANCIES],
-        [{"text": texts.EXIT}],
+        [{"text": texts.BACK}, {"text": texts.EXIT}],
     ],
-}
-NAVIGATION_KEYBOARD = {
-    "keyboard": [[{"text": texts.BACK}, {"text": texts.EXIT}]],
 }
 SENDING_TELEGRAM_KEYBOARD = {
     "keyboard": [
@@ -38,7 +42,7 @@ EMPTY_KEYBOARD = {"remove_keyboard": True}
 
 
 @pytest.mark.anyio()
-async def test_starting_vacancy_form(
+async def test_starting_vacancy_form_epilogue(
     webhook_updater: WebhookUpdater,
     mocked_bot: MockedBot,
     bot_storage: BaseStorage,
@@ -50,6 +54,45 @@ async def test_starting_vacancy_form(
         UpdateFactory.build(
             message=MessageFactory.build(
                 text="/vacancy",
+                chat=Chat(id=tg_chat_id, type="private"),
+                from_user=UserFactory.build(id=tg_user_id),
+            ),
+        )
+    )
+
+    assert (
+        await bot_storage.get_state(bot_storage_key)
+        == VacancyApplication.responding_to_the_epilogue
+    )
+
+    mocked_bot.assert_next_api_call(
+        SendMessage,
+        {
+            "chat_id": tg_chat_id,
+            "text": texts.STARTING_VACANCY_FORM_MESSAGE,
+            "reply_markup": VACANCY_EPILOGUE_KEYBOARD,
+        },
+    )
+    mocked_bot.assert_no_more_api_calls()
+
+
+@pytest.mark.anyio()
+async def test_starting_vacancy_form(
+    webhook_updater: WebhookUpdater,
+    mocked_bot: MockedBot,
+    bot_storage: BaseStorage,
+    bot_storage_key: StorageKey,
+    tg_chat_id: int,
+    tg_user_id: int,
+) -> None:
+    await bot_storage.set_state(
+        bot_storage_key, VacancyApplication.responding_to_the_epilogue
+    )
+
+    webhook_updater(
+        UpdateFactory.build(
+            message=MessageFactory.build(
+                text=texts.CONTINUE_IN_BOT_KEYBOARD_TEXT,
                 chat=Chat(id=tg_chat_id, type="private"),
                 from_user=UserFactory.build(id=tg_user_id),
             ),
@@ -151,13 +194,13 @@ async def test_sending_name(
 
 @pytest.mark.anyio()
 @pytest.mark.parametrize(
-    "provide_account",
+    "is_account_provided",
     [
         pytest.param(
             False,
-            id="current_account",
+            id="current",
         ),
-        pytest.param(True, id="provided_account"),
+        pytest.param(True, id="provide"),
     ],
 )
 async def test_sending_telegram(
@@ -168,15 +211,10 @@ async def test_sending_telegram(
     bot_storage_key: StorageKey,
     tg_chat_id: int,
     tg_user_id: int,
-    provide_account: bool,
+    is_account_provided: bool,
 ) -> None:
     username = faker.word()
-    if provide_account:
-        text = faker.word()
-        expected_data = {"telegram": text}
-    else:
-        text = texts.PROVIDE_CURRENT_ACCOUNT
-        expected_data = {"telegram": f"{texts.TELEGRAM_URL}/{username}"}
+    text = faker.word() if is_account_provided else texts.PROVIDE_CURRENT_ACCOUNT
 
     await bot_storage.set_state(bot_storage_key, VacancyApplication.sending_telegram)
 
@@ -194,7 +232,15 @@ async def test_sending_telegram(
         await bot_storage.get_state(bot_storage_key)
         == VacancyApplication.sending_resume
     )
-    assert await bot_storage.get_data(bot_storage_key) == expected_data
+    assert_contains(
+        await bot_storage.get_data(bot_storage_key),
+        {
+            "telegram": text
+            if is_account_provided
+            else f"{texts.TELEGRAM_URL}/{username}"
+        },
+    )
+
     mocked_bot.assert_next_api_call(
         SendMessage,
         {
@@ -218,6 +264,7 @@ async def test_sending_resume(
 ) -> None:
     await bot_storage.set_state(bot_storage_key, VacancyApplication.sending_resume)
     url = faker.url()
+
     webhook_updater(
         UpdateFactory.build(
             message=MessageFactory.build(
@@ -306,6 +353,12 @@ async def test_sending_info(
     ("state", "expected_message", "expected_keyboard"),
     [
         pytest.param(
+            VacancyApplication.choosing_vacancy,
+            texts.STARTING_VACANCY_FORM_MESSAGE,
+            VACANCY_EPILOGUE_KEYBOARD,
+            id="sending_vacancy",
+        ),
+        pytest.param(
             VacancyApplication.sending_name,
             texts.CHOOSE_VACANCY_MESSAGE,
             CHOOSE_VACANCY_KEYBOARD,
@@ -367,8 +420,12 @@ async def test_going_back(
 
 @pytest.mark.anyio()
 @pytest.mark.parametrize(
-    "state",
+    "current_state",
     [
+        pytest.param(
+            VacancyApplication.responding_to_the_epilogue,
+            id="responding_to_the_epilogue",
+        ),
         pytest.param(VacancyApplication.choosing_vacancy, id="choosing_vacancy"),
         pytest.param(VacancyApplication.sending_name, id="sending_name"),
         pytest.param(VacancyApplication.sending_telegram, id="sending_telegram"),
@@ -376,16 +433,16 @@ async def test_going_back(
         pytest.param(VacancyApplication.sending_info, id="sending_info"),
     ],
 )
-async def test_exit(
+async def test_exiting(
     webhook_updater: WebhookUpdater,
     mocked_bot: MockedBot,
     bot_storage: BaseStorage,
     bot_storage_key: StorageKey,
     tg_chat_id: int,
     tg_user_id: int,
-    state: State,
+    current_state: State,
 ) -> None:
-    await bot_storage.set_state(bot_storage_key, state)
+    await bot_storage.set_state(bot_storage_key, current_state)
 
     webhook_updater(
         UpdateFactory.build(

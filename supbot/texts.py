@@ -43,13 +43,23 @@ NAVIGATION_KEYBOARD_MARKUP_WITH_SKIP: list[list[KeyboardButton]] = [
 ]
 
 # Vacancy form
+XI_EFFECT_VACANCY_FORM_URL = "https://vacancy.xieffect.ru/vacancy"
 EXIT_VACANCY_FORM_MESSAGE = "Будем ждать вас снова!"
+STARTING_VACANCY_FORM_MESSAGE = f"""
+Вы можете выбрать интересующую вакансию
+через бота или по ссылке {XI_EFFECT_VACANCY_FORM_URL}
+"""
 CHOOSE_VACANCY_MESSAGE = "Выберите вакансию или введите свою"
 SEND_NAME_MESSAGE = "Как к вам можно обращаться?"
 SEND_TELEGRAM_MESSAGE = "Ваш телеграм для обратной связи"
 SEND_RESUME_MESSAGE = "Ссылка на ваше резюме"
 SEND_INFO_MESSAGE = "Почти готово. Можете оставить для нас сообщение :)"
 VACANCY_FINAL_MESSAGE = "Спасибо! Мы обязательно рассмотрим ваш отклик и ответим."
+
+CONTINUE_IN_BOT_KEYBOARD_TEXT = "Продолжить через бота"
+VACANCY_EPILOGUE_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
+    [KeyboardButton(text=CONTINUE_IN_BOT_KEYBOARD_TEXT), KeyboardButton(text=EXIT)],
+]
 
 VACANCIES = [
     "Frontend разработчик",
@@ -60,7 +70,7 @@ VACANCIES = [
 ]
 VACANCY_CHOOSE_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
     *[[KeyboardButton(text=VACANCY)] for VACANCY in VACANCIES],
-    [KeyboardButton(text=EXIT)],
+    *NAVIGATION_KEYBOARD_MARKUP,
 ]
 
 
