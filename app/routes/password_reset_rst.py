@@ -1,6 +1,8 @@
+from typing import Annotated
+
 from aio_pika import Message
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.common.config import password_reset_cryptography, pochta_producer
@@ -29,7 +31,7 @@ async def request_password_reset(data: User.EmailModel) -> None:
 
 class ResetCredentials(BaseModel):
     reset_token: str
-    new_password: User.PasswordType
+    new_password: Annotated[str, Field(min_length=6, max_length=100)]
 
 
 class ResetCompleteResponses(Responses):

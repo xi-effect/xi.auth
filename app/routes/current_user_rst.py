@@ -3,7 +3,7 @@ from typing import Annotated
 from aio_pika import Message
 from fastapi import APIRouter
 from pydantic import Field
-from starlette.status import HTTP_401_UNAUTHORIZED
+from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
 from app.common.config import email_confirmation_cryptography, pochta_producer
 from app.common.responses import Responses
@@ -57,10 +57,6 @@ class EmailChangeModel(User.PasswordModel):
     new_email: Annotated[str, Field(max_length=100)]
 
 
-class PasswordChangeModel(User.PasswordModel):
-    new_password: User.PasswordType
-
-
 @router.put(
     "/email/",
     response_model=User.FullModel,
@@ -87,19 +83,34 @@ async def change_user_email(user: AuthorizedUser, put_data: EmailChangeModel) ->
     return user
 
 
+class PasswordChangeModel(User.PasswordModel):
+    new_password: Annotated[str, Field(min_length=6, max_length=100)]
+
+
+@include_responses(PasswordProtectedResponses)
+class PasswordChangeResponse(Responses):
+    PASSWORD_MATCHES_CURRENT = (
+        HTTP_409_CONFLICT,
+        "New password matches the current one",
+    )
+
+
 @router.put(
     "/password/",
     response_model=User.FullModel,
-    responses=PasswordProtectedResponses.responses(),
+    responses=PasswordChangeResponse.responses(),
     summary="Update current user's password",
 )
 async def change_user_password(
     user: AuthorizedUser, session: AuthorizedSession, put_data: PasswordChangeModel
 ) -> User:
     if not user.is_password_valid(password=put_data.password):
-        raise PasswordProtectedResponses.WRONG_PASSWORD.value
+        raise PasswordProtectedResponses.WRONG_PASSWORD
 
-    user.password = put_data.new_password
+    if user.is_password_valid(put_data.new_password):
+        raise PasswordChangeResponse.PASSWORD_MATCHES_CURRENT
+
+    user.change_password(put_data.new_password)
     await session.disable_all_other()
 
     return user
