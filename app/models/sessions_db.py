@@ -1,6 +1,5 @@
 from collections.abc import Sequence
 from datetime import datetime, timedelta
-from secrets import token_urlsafe
 from typing import Any, ClassVar, Self
 
 from pydantic_marshals.sqlalchemy import MappedModel
@@ -8,16 +7,16 @@ from sqlalchemy import CHAR, ForeignKey, Index, delete, select, update
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.config import Base
+from app.common.crypto import TokenGenerator
 from app.common.sqla import db
 from app.models.users_db import User
+
+t = TokenGenerator(randomness=40, length=50)
 
 
 class Session(Base):
     __tablename__ = "sessions"
     not_found_text: ClassVar[str] = "Session not found"
-
-    token_randomness: ClassVar[int] = 40
-    token_length: ClassVar[int] = 50
 
     expiry_timeout: ClassVar[timedelta] = timedelta(days=7)
     renew_period_length: ClassVar[timedelta] = timedelta(days=3)
@@ -25,10 +24,6 @@ class Session(Base):
     max_concurrent_sessions: ClassVar[int] = 10
     max_history_sessions: ClassVar[int] = 20
     max_history_timedelta: ClassVar[timedelta] = timedelta(days=7)
-
-    @staticmethod
-    def generate_token() -> str:
-        return token_urlsafe(Session.token_randomness)[: Session.token_length]
 
     @staticmethod
     def generate_expiry() -> datetime:
@@ -40,7 +35,7 @@ class Session(Base):
     user: Mapped[User] = relationship(passive_deletes=True)
 
     # Security
-    token: Mapped[str] = mapped_column(CHAR(token_length))
+    token: Mapped[str] = mapped_column(CHAR(t.token_length))
     expiry: Mapped[datetime] = mapped_column(default=generate_expiry)
     disabled: Mapped[bool] = mapped_column(default=False)
 
@@ -69,13 +64,13 @@ class Session(Base):
         return self.expiry - self.renew_period_length < datetime.utcnow()
 
     def renew(self) -> None:
-        self.token = self.generate_token()
+        self.token = t.generate_token()
         self.expiry = self.generate_expiry()
 
     @classmethod
     async def create(cls, **kwargs: Any) -> Self:
         if kwargs.get("token") is None:
-            token = cls.generate_token()
+            token = t.generate_token()
             if (await Session.find_first_by_kwargs(token=token)) is not None:
                 raise RuntimeError("Token collision happened (!wow!)")
             kwargs["token"] = token

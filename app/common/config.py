@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, NullPool
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from app.common.cryptography import CryptographyProvider
+from app.common.crypto import CryptographyProvider
 from app.common.rabbit import RabbitDirectProducer
 from app.common.sqla import MappingBase
 

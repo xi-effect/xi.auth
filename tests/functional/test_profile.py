@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 
 import pytest
@@ -184,7 +185,8 @@ async def test_changing_user_password(
     user_data: dict[str, Any],
     user: User,
 ) -> None:
-    new_password = faker.password()
+    old_change_time: datetime.datetime = (await get_db_user(user)).last_password_change
+    new_password: str = faker.password()
 
     assert_response(
         authorized_client.put(
@@ -196,6 +198,7 @@ async def test_changing_user_password(
 
     async with active_session():
         assert (await get_db_user(user)).is_password_valid(new_password)
+        assert (await get_db_user(user)).last_password_change > old_change_time
 
 
 @pytest.mark.anyio()
@@ -210,4 +213,22 @@ async def test_changing_user_password_wrong_password(
         ),
         expected_code=401,
         expected_json={"detail": "Wrong password"},
+    )
+
+
+@pytest.mark.anyio()
+async def test_changing_user_password_old_password(
+    authorized_client: TestClient,
+    user_data: dict[str, Any],
+) -> None:
+    assert_response(
+        authorized_client.put(
+            "/api/users/current/password/",
+            json={
+                "new_password": user_data["password"],
+                "password": user_data["password"],
+            },
+        ),
+        expected_code=422,
+        expected_json={"detail": "Can't change old password to the old one"},
     )

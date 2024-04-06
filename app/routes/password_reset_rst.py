@@ -29,7 +29,7 @@ async def request_password_reset(data: User.EmailModel) -> None:
 
 class ResetCredentials(BaseModel):
     reset_token: str
-    new_password: User.PasswordType
+    new_password: str
 
 
 class ResetCompleteResponses(Responses):
