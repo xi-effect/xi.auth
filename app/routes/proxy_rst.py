@@ -14,10 +14,7 @@ from app.utils.authorization import (
 router = APIRouterExt(tags=["proxy auth"])
 
 
-@router.get(
-    "/",
-    status_code=204,
-)
+@router.get("/", status_code=204, summary="Retrieve headers for proxy authorization")
 async def proxy_auth(
     response: Response,
     x_request_method: Annotated[str | None, Header(alias="X-Request-Method")] = None,

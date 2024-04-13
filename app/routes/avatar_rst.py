@@ -14,7 +14,12 @@ class AvatarResponses(Responses):
     WRONG_FORMAT = (415, "Invalid image format")
 
 
-@router.put("/", status_code=204, responses=AvatarResponses.responses())
+@router.put(
+    "/",
+    status_code=204,
+    responses=AvatarResponses.responses(),
+    summary="Upload a new user avatar",
+)
 async def update_or_create_avatar(
     user: AuthorizedUser,
     avatar: Annotated[UploadFile, File(description="image/webp")],
@@ -26,6 +31,6 @@ async def update_or_create_avatar(
         file.write(await avatar.read())
 
 
-@router.delete("/", status_code=204)
+@router.delete("/", status_code=204, summary="Remove current user avatar")
 async def delete_avatar(user: AuthorizedUser) -> None:
     user.avatar_path.unlink(missing_ok=True)

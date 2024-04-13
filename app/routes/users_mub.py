@@ -11,7 +11,10 @@ router = APIRouterExt(tags=["users mub"])
 
 
 @router.post(
-    "/", response_model=User.FullModel, responses=UserCreationResponses.responses()
+    "/",
+    response_model=User.FullModel,
+    responses=UserCreationResponses.responses(),
+    summary="Create a new user",
 )
 async def create_user(user_data: User.InputModel) -> User:
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
@@ -24,6 +27,7 @@ async def create_user(user_data: User.InputModel) -> User:
 @router.get(
     "/{user_id}/",
     response_model=User.FullModel,
+    summary="Retrieve any user by id",
 )
 async def retrieve_user(user: TargetUser) -> User:
     return user
@@ -42,6 +46,6 @@ async def update_user(user: TargetUser, user_data: User.FullPatchModel) -> User:
     return user
 
 
-@router.delete("/{user_id}/", status_code=204)
+@router.delete("/{user_id}/", status_code=204, summary="Delete any user by id")
 async def delete_user(user: TargetUser) -> None:
     await user.delete()

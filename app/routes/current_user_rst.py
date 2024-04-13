@@ -16,6 +16,7 @@ router = APIRouterExt(tags=["current user"])
 @router.get(
     "/home/",
     response_model=User.FullModel,
+    summary="Retrieve current user's profile data",
 )
 async def get_user_data(user: AuthorizedUser) -> User:
     return user

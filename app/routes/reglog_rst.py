@@ -21,6 +21,7 @@ router = APIRouterExt(tags=["reglog"])
     "/signup/",
     response_model=User.FullModel,
     responses=UserCreationResponses.responses(),
+    summary="Register a new account",
 )
 async def signup(
     user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
@@ -54,6 +55,7 @@ class SigninResponses(Responses):
     "/signin/",
     response_model=User.FullModel,
     responses=SigninResponses.responses(),
+    summary="Sign in into an existing account (creates a new session)",
 )
 async def signin(
     user_data: User.CredentialsModel, cross_site: CrossSiteMode, response: Response
@@ -72,7 +74,11 @@ async def signin(
     return user
 
 
-@router.post("/signout/", status_code=204)
+@router.post(
+    "/signout/",
+    status_code=204,
+    summary="Sign out from current account (disables the current session and removes cookies)",
+)
 async def signout(session: AuthorizedSession, response: Response) -> None:
     session.disabled = True
     remove_session_from_response(response)
