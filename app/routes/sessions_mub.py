@@ -1,15 +1,14 @@
 from collections.abc import Sequence
 
-from fastapi import APIRouter, Response
+from fastapi import Response
 from starlette.status import HTTP_404_NOT_FOUND
 
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.sessions_db import Session
 from app.utils.authorization import AUTH_COOKIE_NAME, add_session_to_response
-from app.utils.magic import include_responses
-from app.utils.users import TargetUser, UserResponses
+from app.utils.users import TargetUser
 
-router = APIRouter(tags=["sessions mub"])
+router = APIRouterExt(tags=["sessions mub"])
 
 
 def add_mub_session_to_response(response: Response, session: Session) -> None:
@@ -26,32 +25,19 @@ def add_mub_session_to_response(response: Response, session: Session) -> None:
 @router.post(
     "/",
     status_code=204,
-    responses=UserResponses.responses(),
     summary="Create a new admin session",
 )
-async def make_mub_session(
-    response: Response,
-    user: TargetUser,
-) -> None:
+async def make_mub_session(response: Response, user: TargetUser) -> None:
     session = await Session.create(user_id=user.id, mub=True)
     add_mub_session_to_response(response, session)
-
-
-@include_responses(UserResponses)
-class UserAndSessionResponses(Responses):
-    SESSION_NOT_FOUND = (HTTP_404_NOT_FOUND, Session.not_found_text)
 
 
 @router.put(
     "/",
     status_code=204,
-    responses=UserAndSessionResponses.responses(),
     summary="Retrieve or create an admin session",
 )
-async def upsert_mub_session(
-    response: Response,
-    user: TargetUser,
-) -> None:
+async def upsert_mub_session(response: Response, user: TargetUser) -> None:
     session = await Session.find_active_mub_session(user.id)
     if session is None:
         session = await Session.create(user_id=user.id, mub=True)
@@ -61,17 +47,20 @@ async def upsert_mub_session(
 @router.get(
     "/",
     response_model=list[Session.MUBFullModel],
-    responses=UserAndSessionResponses.responses(),
-    summary="Show all user sessions",
+    summary="List all user sessions",
 )
 async def list_all_sessions(user: TargetUser) -> Sequence[Session]:
     return await Session.find_all_by_kwargs(Session.expiry.desc(), user_id=user.id)
 
 
+class SessionResponses(Responses):
+    SESSION_NOT_FOUND = (HTTP_404_NOT_FOUND, Session.not_found_text)
+
+
 @router.delete(
     "/{session_id}/",
     status_code=204,
-    responses=UserAndSessionResponses.responses(),
+    responses=SessionResponses.responses(),
     summary="Disable or delete any user session",
 )
 async def disable_or_delete_session(
@@ -81,7 +70,7 @@ async def disable_or_delete_session(
 ) -> None:
     session = await Session.find_first_by_kwargs(id=session_id, user_id=user.id)
     if session is None:
-        raise UserAndSessionResponses.SESSION_NOT_FOUND.value
+        raise SessionResponses.SESSION_NOT_FOUND.value
     if delete_session:
         await session.delete()
     else:

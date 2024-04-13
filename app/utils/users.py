@@ -4,12 +4,9 @@ from fastapi import Depends, Path
 from pydantic_marshals.base import PatchDefault, PatchDefaultType
 from starlette.status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT
 
-from app.common.responses import Responses
+from app.common.fastapi_extension import Responses, with_responses
 from app.models.users_db import User
-
-
-class UserResponses(Responses):
-    USER_NOT_FOUND = (HTTP_404_NOT_FOUND, User.not_found_text)
+from app.utils.magic import include_responses
 
 
 class UsernameResponses(Responses):
@@ -24,6 +21,15 @@ async def is_username_unique(
     return True
 
 
+class UserEmailResponses(Responses):
+    EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
+
+
+class UserResponses(Responses):
+    USER_NOT_FOUND = (HTTP_404_NOT_FOUND, User.not_found_text)
+
+
+@with_responses(UserResponses)
 async def get_user_by_id(user_id: Annotated[int, Path()]) -> User:
     user = await User.find_first_by_id(user_id)
     if user is None:
@@ -32,3 +38,8 @@ async def get_user_by_id(user_id: Annotated[int, Path()]) -> User:
 
 
 TargetUser = Annotated[User, Depends(get_user_by_id)]
+
+
+@include_responses(UsernameResponses, UserEmailResponses)
+class UserCreationResponses(Responses):
+    pass

@@ -1,12 +1,11 @@
-from fastapi import APIRouter
 from pydantic import BaseModel
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.common.config import email_confirmation_cryptography
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
 
-router = APIRouter(tags=["email confirmation"])
+router = APIRouterExt(tags=["email confirmation"])
 
 
 class EmailConfirmationResponses(Responses):

@@ -1,17 +1,13 @@
-from fastapi import APIRouter
-
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt
 from app.models.users_db import User
-from app.routes.reglog_rst import UserCreationResponses
-from app.utils.magic import include_responses
 from app.utils.users import (
     TargetUser,
+    UserCreationResponses,
     UsernameResponses,
-    UserResponses,
     is_username_unique,
 )
 
-router = APIRouter(tags=["users mub"])
+router = APIRouterExt(tags=["users mub"])
 
 
 @router.post(
@@ -28,22 +24,16 @@ async def create_user(user_data: User.InputModel) -> User:
 @router.get(
     "/{user_id}/",
     response_model=User.FullModel,
-    responses=UserResponses.responses(),
 )
 async def retrieve_user(user: TargetUser) -> User:
     return user
 
 
-@include_responses(UsernameResponses, UserResponses)
-class UpdateUserByIDResponses(Responses):
-    pass
-
-
 @router.patch(
     "/{user_id}/",
     response_model=User.FullModel,
-    responses=UpdateUserByIDResponses.responses(),
-    summary="Update user's data by id",
+    responses=UsernameResponses.responses(),
+    summary="Update any user's data by id",
 )
 async def update_user(user: TargetUser, user_data: User.FullPatchModel) -> User:
     if not await is_username_unique(user_data.username, user.username):
@@ -52,10 +42,6 @@ async def update_user(user: TargetUser, user_data: User.FullPatchModel) -> User:
     return user
 
 
-@router.delete(
-    "/{user_id}/",
-    status_code=204,
-    responses=UpdateUserByIDResponses.responses(),
-)
+@router.delete("/{user_id}/", status_code=204)
 async def delete_user(user: TargetUser) -> None:
     await user.delete()

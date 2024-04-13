@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Request
+from fastapi import Request
 
+from app.common.fastapi_extension import APIRouterExt
 from supbot.main import telegram_app
 
-router = APIRouter()
+router = APIRouterExt()
 
 
 @router.post("/updates/", status_code=204)

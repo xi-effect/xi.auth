@@ -52,7 +52,7 @@ class User(Base):
     PasswordType = Annotated[
         str, Field(min_length=6, max_length=100), AfterValidator(generate_hash)
     ]
-    DisplaynameType = Annotated[
+    DisplayNameType = Annotated[
         str | None,
         StringConstraints(strip_whitespace=True),
         Field(min_length=2, max_length=30),
@@ -72,14 +72,14 @@ class User(Base):
     CredentialsModel = MappedModel.create(columns=[email, password])
     UserProfileModel = MappedModel.create(columns=[id, username, display_name])
     ProfileModel = MappedModel.create(
-        columns=[(username, UsernameType), (display_name, DisplaynameType), theme]
+        columns=[(username, UsernameType), (display_name, DisplayNameType), theme]
     )
     ProfilePatchModel = ProfileModel.as_patch()
     FullModel = ProfileModel.extend(
         columns=[id, email, email_confirmed, last_password_change, onboarding_stage]
     )
     FullPatchModel = InputModel.extend(
-        columns=[(display_name, DisplaynameType), theme, onboarding_stage]
+        columns=[(display_name, DisplayNameType), theme, onboarding_stage]
     ).as_patch()
 
     def is_password_valid(self, password: str) -> bool:

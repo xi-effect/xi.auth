@@ -104,6 +104,7 @@ omit = [
   "alembic/*",
   "test/*",
   "app/common/sqla.py",
+  "app/common/fastapi_extension.py",
   "app/utils/setup.py",
   "supbot/setup.py",
   "app/setup_ci.py",

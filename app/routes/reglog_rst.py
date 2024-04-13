@@ -1,9 +1,9 @@
 from aio_pika import Message
-from fastapi import APIRouter, Response
-from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
+from fastapi import Response
+from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.common.config import email_confirmation_cryptography, pochta_producer
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import (
@@ -12,15 +12,9 @@ from app.utils.authorization import (
     add_session_to_response,
     remove_session_from_response,
 )
-from app.utils.magic import include_responses
-from app.utils.users import UsernameResponses
+from app.utils.users import UsernameResponses, UserCreationResponses, is_username_unique
 
-router = APIRouter(tags=["reglog"])
-
-
-@include_responses(UsernameResponses)
-class UserCreationResponses(Responses):
-    EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
+router = APIRouterExt(tags=["reglog"])
 
 
 @router.post(

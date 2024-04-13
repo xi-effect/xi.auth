@@ -1,8 +1,9 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Header
+from fastapi import Header
 from starlette.responses import Response
 
+from app.common.fastapi_extension import APIRouterExt
 from app.utils.authorization import (
     AuthCookie,
     AuthHeader,
@@ -10,7 +11,7 @@ from app.utils.authorization import (
     authorize_user,
 )
 
-router = APIRouter(tags=["proxy auth"])
+router = APIRouterExt(tags=["proxy auth"])
 
 
 @router.get(

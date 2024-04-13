@@ -1,17 +1,16 @@
 from typing import Annotated
 
 from aio_pika import Message
-from fastapi import APIRouter
 from pydantic import Field
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
 from app.common.config import email_confirmation_cryptography, pochta_producer
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
 from app.utils.authorization import AuthorizedSession, AuthorizedUser
 from app.utils.users import UsernameResponses, is_username_unique
 
-router = APIRouter(tags=["current user"])
+router = APIRouterExt(tags=["current user"])
 
 
 @router.get(

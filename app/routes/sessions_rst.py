@@ -1,13 +1,12 @@
 from collections.abc import Sequence
 
-from fastapi import APIRouter
 from starlette.status import HTTP_404_NOT_FOUND
 
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.sessions_db import Session
 from app.utils.authorization import AuthorizedSession, AuthorizedUser
 
-router = APIRouter(tags=["user sessions"])
+router = APIRouterExt(tags=["user sessions"])
 
 
 @router.get(

@@ -1,13 +1,13 @@
 from typing import Annotated
 
 import filetype  # type: ignore[import-untyped]
-from fastapi import APIRouter, File, UploadFile
+from fastapi import File, UploadFile
 from filetype.types.image import Webp  # type: ignore[import-untyped]
 
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.utils.authorization import AuthorizedUser
 
-router = APIRouter(tags=["current user avatar"])
+router = APIRouterExt(tags=["current user avatar"])
 
 
 class AvatarResponses(Responses):

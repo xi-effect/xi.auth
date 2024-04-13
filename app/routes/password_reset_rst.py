@@ -1,16 +1,15 @@
 from typing import Annotated
 
 from aio_pika import Message
-from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.common.config import password_reset_cryptography, pochta_producer
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
 from app.utils.users import UserResponses
 
-router = APIRouter(tags=["password reset"])
+router = APIRouterExt(tags=["password reset"])
 
 
 @router.post(
