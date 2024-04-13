@@ -6,8 +6,7 @@ from starlette.status import HTTP_409_CONFLICT
 
 from app.common.responses import Responses
 from app.models.users_db import OnboardingStage
-from app.utils.authorization import AuthorizedResponses, AuthorizedUser
-from app.utils.magic import include_responses
+from app.utils.authorization import AuthorizedUser
 
 router = APIRouter(tags=["onboarding"])
 
@@ -16,7 +15,6 @@ class CommunityChoiceModel(BaseModel):
     display_name: str
 
 
-@include_responses(AuthorizedResponses)
 class OnboardingResponses(Responses):
     INVALID_TRANSITION = (HTTP_409_CONFLICT, "Invalid transition")
 

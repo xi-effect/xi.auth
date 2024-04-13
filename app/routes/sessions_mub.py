@@ -7,7 +7,6 @@ from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.utils.authorization import AUTH_COOKIE_NAME, add_session_to_response
 from app.utils.magic import include_responses
-from app.utils.mub import MUBResponses
 from app.utils.users import TargetUser, UserResponses
 
 router = APIRouter(tags=["sessions mub"])
@@ -24,15 +23,10 @@ def add_mub_session_to_response(response: Response, session: Session) -> None:
     response.headers["X-Session-Token"] = session.token
 
 
-@include_responses(UserResponses, MUBResponses)
-class MUBSessionCreateResponses(Responses):
-    pass
-
-
 @router.post(
     "/",
     status_code=204,
-    responses=MUBSessionCreateResponses.responses(),
+    responses=UserResponses.responses(),
     summary="Create a new admin session",
 )
 async def make_mub_session(
@@ -43,15 +37,15 @@ async def make_mub_session(
     add_mub_session_to_response(response, session)
 
 
-@include_responses(UserResponses, MUBResponses)
-class MUBSessionResponses(Responses):
+@include_responses(UserResponses)
+class UserAndSessionResponses(Responses):
     SESSION_NOT_FOUND = (HTTP_404_NOT_FOUND, Session.not_found_text)
 
 
 @router.put(
     "/",
     status_code=204,
-    responses=MUBSessionResponses.responses(),
+    responses=UserAndSessionResponses.responses(),
     summary="Retrieve or create an admin session",
 )
 async def upsert_mub_session(
@@ -67,7 +61,7 @@ async def upsert_mub_session(
 @router.get(
     "/",
     response_model=list[Session.MUBFullModel],
-    responses=MUBSessionResponses.responses(),
+    responses=UserAndSessionResponses.responses(),
     summary="Show all user sessions",
 )
 async def list_all_sessions(user: TargetUser) -> Sequence[Session]:
@@ -77,7 +71,7 @@ async def list_all_sessions(user: TargetUser) -> Sequence[Session]:
 @router.delete(
     "/{session_id}/",
     status_code=204,
-    responses=MUBSessionResponses.responses(),
+    responses=UserAndSessionResponses.responses(),
     summary="Disable or delete any user session",
 )
 async def disable_or_delete_session(
@@ -87,7 +81,7 @@ async def disable_or_delete_session(
 ) -> None:
     session = await Session.find_first_by_kwargs(id=session_id, user_id=user.id)
     if session is None:
-        raise MUBSessionResponses.SESSION_NOT_FOUND.value
+        raise UserAndSessionResponses.SESSION_NOT_FOUND.value
     if delete_session:
         await session.delete()
     else:

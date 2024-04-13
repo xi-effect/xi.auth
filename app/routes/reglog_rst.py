@@ -7,7 +7,6 @@ from app.common.responses import Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import (
-    AuthorizedResponses,
     AuthorizedSession,
     CrossSiteMode,
     add_session_to_response,
@@ -20,20 +19,20 @@ router = APIRouter(tags=["reglog"])
 
 
 @include_responses(UsernameResponses)
-class SignupResponses(Responses):
+class UserCreationResponses(Responses):
     EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
 
 
 @router.post(
     "/signup/",
     response_model=User.FullModel,
-    responses=SignupResponses.responses(),
+    responses=UserCreationResponses.responses(),
 )
 async def signup(
     user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
 ) -> User:
     if await User.find_first_by_kwargs(email=user_data.email) is not None:
-        raise SignupResponses.EMAIL_IN_USE.value
+        raise UserCreationResponses.EMAIL_IN_USE.value
     if await User.find_first_by_kwargs(username=user_data.username) is not None:
         raise UsernameResponses.USERNAME_IN_USE.value
 
@@ -79,7 +78,7 @@ async def signin(
     return user
 
 
-@router.post("/signout/", responses=AuthorizedResponses.responses(), status_code=204)
+@router.post("/signout/", status_code=204)
 async def signout(session: AuthorizedSession, response: Response) -> None:
     session.disabled = True
     remove_session_from_response(response)

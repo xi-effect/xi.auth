@@ -6,7 +6,6 @@ from starlette.responses import Response
 from app.utils.authorization import (
     AuthCookie,
     AuthHeader,
-    AuthorizedResponses,
     authorize_session,
     authorize_user,
 )
@@ -17,7 +16,6 @@ router = APIRouter(tags=["proxy auth"])
 @router.get(
     "/",
     status_code=204,
-    responses=AuthorizedResponses.responses(),
 )
 async def proxy_auth(
     response: Response,

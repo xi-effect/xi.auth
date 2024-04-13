@@ -5,12 +5,7 @@ from starlette.status import HTTP_404_NOT_FOUND
 
 from app.common.responses import Responses
 from app.models.sessions_db import Session
-from app.utils.authorization import (
-    AuthorizedResponses,
-    AuthorizedSession,
-    AuthorizedUser,
-)
-from app.utils.magic import include_responses
+from app.utils.authorization import AuthorizedSession, AuthorizedUser
 
 router = APIRouter(tags=["user sessions"])
 
@@ -18,7 +13,6 @@ router = APIRouter(tags=["user sessions"])
 @router.get(
     "/current/",
     response_model=Session.FullModel,
-    responses=AuthorizedResponses.responses(),
 )
 async def get_current_session(session: AuthorizedSession) -> Session:
     return session
@@ -27,7 +21,6 @@ async def get_current_session(session: AuthorizedSession) -> Session:
 @router.get(
     "/",
     response_model=list[Session.FullModel],
-    responses=AuthorizedResponses.responses(),
 )
 async def list_sessions(
     user: AuthorizedUser, session: AuthorizedSession
@@ -35,12 +28,11 @@ async def list_sessions(
     return await Session.find_by_user(user.id, exclude_id=session.id)
 
 
-@router.delete("/", responses=AuthorizedResponses.responses(), status_code=204)
+@router.delete("/", status_code=204)
 async def disable_all_but_current(session: AuthorizedSession) -> None:
     await session.disable_all_other()
 
 
-@include_responses(AuthorizedResponses)
 class SessionResponses(Responses):
     SESSION_NOT_FOUND = (HTTP_404_NOT_FOUND, Session.not_found_text)
 
