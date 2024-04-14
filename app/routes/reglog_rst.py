@@ -12,7 +12,13 @@ from app.utils.authorization import (
     add_session_to_response,
     remove_session_from_response,
 )
-from app.utils.users import UsernameResponses, UserCreationResponses, is_username_unique
+from app.utils.users import (
+    UserConflictResponses,
+    UserEmailResponses,
+    UsernameResponses,
+    is_email_unique,
+    is_username_unique,
+)
 
 router = APIRouterExt(tags=["reglog"])
 
@@ -20,15 +26,15 @@ router = APIRouterExt(tags=["reglog"])
 @router.post(
     "/signup/",
     response_model=User.FullModel,
-    responses=UserCreationResponses.responses(),
+    responses=UserConflictResponses.responses(),
     summary="Register a new account",
 )
 async def signup(
     user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
 ) -> User:
-    if await User.find_first_by_kwargs(email=user_data.email) is not None:
-        raise UserCreationResponses.EMAIL_IN_USE.value
-    if await User.find_first_by_kwargs(username=user_data.username) is not None:
+    if not await is_email_unique(user_data.email):
+        raise UserEmailResponses.EMAIL_IN_USE.value
+    if not await is_username_unique(user_data.username):
         raise UsernameResponses.USERNAME_IN_USE.value
 
     user = await User.create(**user_data.model_dump())

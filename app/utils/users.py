@@ -14,7 +14,7 @@ class UsernameResponses(Responses):
 
 
 async def is_username_unique(
-    patch_username: str | PatchDefaultType, current_username: str
+    patch_username: str | PatchDefaultType, current_username: str | None = None
 ) -> bool:
     if patch_username is not PatchDefault and patch_username != current_username:
         return await User.find_first_by_kwargs(username=patch_username) is None
@@ -23,6 +23,14 @@ async def is_username_unique(
 
 class UserEmailResponses(Responses):
     EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
+
+
+async def is_email_unique(
+    patch_email: str | PatchDefaultType, current_email: str | None = None
+) -> bool:
+    if patch_email is not PatchDefault and patch_email != current_email:
+        return await User.find_first_by_kwargs(email=patch_email) is None
+    return True
 
 
 class UserResponses(Responses):
@@ -41,5 +49,5 @@ TargetUser = Annotated[User, Depends(get_user_by_id)]
 
 
 @include_responses(UsernameResponses, UserEmailResponses)
-class UserCreationResponses(Responses):
+class UserConflictResponses(Responses):
     pass

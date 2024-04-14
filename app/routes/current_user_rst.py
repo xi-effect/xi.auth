@@ -8,7 +8,13 @@ from app.common.config import email_confirmation_cryptography, pochta_producer
 from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
 from app.utils.authorization import AuthorizedSession, AuthorizedUser
-from app.utils.users import UsernameResponses, is_username_unique
+from app.utils.magic import include_responses
+from app.utils.users import (
+    UserEmailResponses,
+    UsernameResponses,
+    is_email_unique,
+    is_username_unique,
+)
 
 router = APIRouterExt(tags=["current user"])
 
@@ -45,15 +51,27 @@ class EmailChangeModel(User.PasswordModel):
     new_email: Annotated[str, Field(max_length=100)]
 
 
+class PasswordChangeModel(User.PasswordModel):
+    new_password: User.PasswordType
+
+
+@include_responses(PasswordProtectedResponses, UserEmailResponses)
+class EmailChangeResponses(Responses):
+    pass
+
+
 @router.put(
     "/email/",
     response_model=User.FullModel,
-    responses=PasswordProtectedResponses.responses(),
+    responses=EmailChangeResponses.responses(),
     summary="Update current user's email",
 )
 async def change_user_email(user: AuthorizedUser, put_data: EmailChangeModel) -> User:
     if not user.is_password_valid(password=put_data.password):
         raise PasswordProtectedResponses.WRONG_PASSWORD.value
+
+    if not await is_email_unique(put_data.new_email, user.username):
+        raise UserEmailResponses.EMAIL_IN_USE.value
 
     user.email = put_data.new_email
     user.email_confirmed = False

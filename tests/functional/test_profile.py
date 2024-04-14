@@ -163,6 +163,22 @@ async def test_changing_user_email(
 
 
 @pytest.mark.anyio()
+async def test_changing_user_email_conflict(
+    authorized_client: TestClient,
+    user_data: dict[str, Any],
+    other_user: User,
+) -> None:
+    assert_response(
+        authorized_client.put(
+            "/api/users/current/email/",
+            json={"password": user_data["password"], "new_email": other_user.email},
+        ),
+        expected_code=409,
+        expected_json={"detail": "Email already in use"},
+    )
+
+
+@pytest.mark.anyio()
 async def test_changing_user_email_wrong_password(
     faker: Faker,
     authorized_client: TestClient,
