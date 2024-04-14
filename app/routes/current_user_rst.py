@@ -51,10 +51,6 @@ class EmailChangeModel(User.PasswordModel):
     new_email: Annotated[str, Field(max_length=100)]
 
 
-class PasswordChangeModel(User.PasswordModel):
-    new_password: User.PasswordType
-
-
 @include_responses(PasswordProtectedResponses, UserEmailResponses)
 class EmailChangeResponses(Responses):
     pass

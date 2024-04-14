@@ -61,11 +61,10 @@ async def test_confirming_password_reset(
         client.post(
             "/api/password-reset/confirmations/",
             json={
-                "reset_token": password_reset_cryptography.encrypt(reset_token),
+                "token": password_reset_cryptography.encrypt(reset_token),
                 "new_password": new_password,
             },
         ),
-        expected_code=204,
     )
 
     async with active_session():
@@ -83,7 +82,7 @@ async def test_confirming_password_reset_invalid_token(
     assert_response(
         client.post(
             "/api/password-reset/confirmations/",
-            json={"reset_token": faker.text(), "new_password": faker.password()},
+            json={"token": faker.text(), "new_password": faker.password()},
         ),
         expected_code=401,
         expected_json={"detail": "Invalid token"},
@@ -108,7 +107,7 @@ async def test_confirming_password_reset_expired_token(
         client.post(
             "/api/password-reset/confirmations/",
             json={
-                "reset_token": expired_reset_token.decode("utf-8"),
+                "token": expired_reset_token.decode("utf-8"),
                 "new_password": faker.password(),
             },
         ),
@@ -126,7 +125,7 @@ async def test_confirming_password_reset_no_started_reset(
         client.post(
             "/api/password-reset/confirmations/",
             json={
-                "reset_token": password_reset_cryptography.encrypt(faker.text()),
+                "token": password_reset_cryptography.encrypt(faker.text()),
                 "new_password": faker.password(),
             },
         ),
@@ -151,7 +150,7 @@ async def test_confirming_password_reset_with_old_password(
         client.post(
             "/api/password-reset/confirmations/",
             json={
-                "reset_token": password_reset_cryptography.encrypt(reset_token),
+                "token": password_reset_cryptography.encrypt(reset_token),
                 "new_password": user_data["password"],
             },
         ),
