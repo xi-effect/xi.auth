@@ -1,4 +1,6 @@
 import time
+from datetime import datetime
+from typing import Any
 
 import pytest
 from faker import Faker
@@ -50,7 +52,9 @@ async def test_confirming_password_reset(
     user: User,
 ) -> None:
     async with active_session():
-        reset_token: str = (await get_db_user(user)).generated_reset_token
+        db_user = await get_db_user(user)
+        reset_token: str = db_user.generated_reset_token
+        previous_last_password_change: datetime = db_user.last_password_change
     new_password: str = faker.password()
 
     assert_nodata_response(
@@ -67,6 +71,7 @@ async def test_confirming_password_reset(
     async with active_session():
         user_after_reset = await get_db_user(user)
         assert user_after_reset.is_password_valid(new_password)
+        assert user_after_reset.last_password_change > previous_last_password_change
         assert user_after_reset.reset_token is None
 
 
@@ -128,3 +133,31 @@ async def test_confirming_password_reset_no_started_reset(
         expected_code=401,
         expected_json={"detail": "Invalid token"},
     )
+
+
+@pytest.mark.anyio()
+async def test_confirming_password_reset_with_old_password(
+    active_session: ActiveSession,
+    client: TestClient,
+    user: User,
+    user_data: dict[str, Any],
+) -> None:
+    async with active_session():
+        db_user = await get_db_user(user)
+        reset_token: str = db_user.generated_reset_token
+        previous_last_password_change: datetime = db_user.last_password_change
+
+    assert_nodata_response(
+        client.post(
+            "/api/password-reset/confirmations/",
+            json={
+                "reset_token": password_reset_cryptography.encrypt(reset_token),
+                "new_password": user_data["password"],
+            },
+        ),
+    )
+
+    async with active_session():
+        assert (
+            await get_db_user(user)
+        ).last_password_change == previous_last_password_change

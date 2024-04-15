@@ -8,7 +8,7 @@ from sqlalchemy import MetaData, NullPool
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from app.common.cryptography import CryptographyProvider
+from app.common.cryptography import CryptographyProvider, TokenGenerator
 from app.common.rabbit import RabbitDirectProducer
 from app.common.sqla import MappingBase
 
@@ -84,3 +84,5 @@ email_confirmation_cryptography = CryptographyProvider(
     EMAIL_CONFIRMATION_KEYS,
     encryption_ttl=60 * 60 * 24,
 )
+
+token_generator = TokenGenerator(randomness=40, length=50)
