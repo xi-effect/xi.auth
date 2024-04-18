@@ -31,6 +31,7 @@ async def test_making_mub_session(
 ) -> None:
     response = assert_nodata_response(
         mub_client.post(f"/mub/users/{user.id}/sessions/"),
+        expected_code=201,
         expected_cookies={AUTH_COOKIE_NAME: str},
         expected_headers={
             "X-Session-ID": int,

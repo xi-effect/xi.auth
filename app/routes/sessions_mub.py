@@ -24,7 +24,7 @@ def add_mub_session_to_response(response: Response, session: Session) -> None:
 
 @router.post(
     "/",
-    status_code=204,
+    status_code=201,
     summary="Create a new admin session",
 )
 async def make_mub_session(response: Response, user: TargetUser) -> None:

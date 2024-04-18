@@ -14,6 +14,7 @@ router = APIRouterExt(tags=["users mub"])
 
 @router.post(
     "/",
+    status_code=201,
     response_model=User.FullModel,
     responses=UserConflictResponses.responses(),
     summary="Create a new user",
