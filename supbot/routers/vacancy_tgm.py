@@ -28,6 +28,7 @@ async def exit_vacancy_form(message: MessageExt, state: FSMContext) -> None:
     await message.answer(
         text=texts.EXIT_VACANCY_FORM_MESSAGE, reply_markup=ReplyKeyboardRemove()
     )
+    await message.answer(text=texts.INFORMATION_MESSAGE)
 
 
 @router.message(Command("vacancy"), F.chat.type == "private")
