@@ -8,6 +8,7 @@ from supbot.aiogram_extension import MessageExt
 from supbot.texts import (
     EXIT_SUPPORT_MESSAGE,
     MAIN_MENU_BUTTON_TEXT,
+    START_MESSAGE,
     START_SUPPORT_MESSAGE,
     WAIT_SUPPORT_MESSAGE,
 )
@@ -39,6 +40,7 @@ async def cancel_support(message: MessageExt, state: FSMContext) -> None:
         text=EXIT_SUPPORT_MESSAGE,
         reply_markup=ReplyKeyboardRemove(),
     )
+    await message.answer(text=START_MESSAGE)
     await state.clear()
 
 

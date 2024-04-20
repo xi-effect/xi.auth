@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.filters import CommandStart
+from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 
 from supbot import texts
@@ -13,7 +13,7 @@ async def start_conversation(message: MessageExt) -> None:
     await message.answer(texts.START_MESSAGE)
 
 
-@router.message()
+@router.message(Command("echo"))
 async def echo_message(
     message: MessageExt,
     state: FSMContext,
@@ -37,3 +37,8 @@ async def echo_message(
         text=message.text,
         entities=message.entities,
     )
+
+
+@router.message()
+async def handle_wrong_commands(message: MessageExt) -> None:
+    await message.answer(texts.WRONG_COMMAND_MESSAGE)
