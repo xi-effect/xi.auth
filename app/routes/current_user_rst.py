@@ -1,13 +1,19 @@
 from typing import Annotated
 
 from aio_pika import Message
+from fastapi import APIRouter
 from pydantic import Field
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
 from app.common.config import email_confirmation_cryptography, pochta_producer
 from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
-from app.utils.authorization import AuthorizedSession, AuthorizedUser
+from app.routes.email_confirmation_rst import ResendingEmailConfirmationResponses
+from app.utils.authorization import (
+    AuthorizedResponses,
+    AuthorizedSession,
+    AuthorizedUser,
+)
 from app.utils.magic import include_responses
 from app.utils.users import (
     UserEmailResponses,
@@ -47,6 +53,11 @@ class PasswordProtectedResponses(Responses):
     WRONG_PASSWORD = (HTTP_401_UNAUTHORIZED, "Wrong password")
 
 
+@include_responses(PasswordProtectedResponses, ResendingEmailConfirmationResponses)
+class EmailChangeResponses(Responses):
+    pass
+
+
 class EmailChangeModel(User.PasswordModel):
     new_email: Annotated[str, Field(max_length=100)]
 
@@ -69,9 +80,12 @@ async def change_user_email(user: AuthorizedUser, put_data: EmailChangeModel) ->
     if not await is_email_unique(put_data.new_email, user.username):
         raise UserEmailResponses.EMAIL_IN_USE.value
 
+    if not user.is_email_confirmation_resend_allowed():
+        raise ResendingEmailConfirmationResponses.TOO_MANY_EMAILS
+
     user.email = put_data.new_email
     user.email_confirmed = False
-
+    user.set_confirmation_resend_timeout()
     confirmation_token: str = email_confirmation_cryptography.encrypt(user.email)
     await pochta_producer.send_message(
         message=Message(

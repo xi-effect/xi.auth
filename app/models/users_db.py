@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Annotated, ClassVar
 
@@ -23,6 +23,7 @@ class OnboardingStage(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
     not_found_text: ClassVar[str] = "User not found"
+    email_confirmation_resend_timeout: ClassVar[timedelta] = timedelta(minutes=10)
 
     @staticmethod
     def generate_hash(password: str) -> str:
@@ -42,6 +43,9 @@ class User(Base):
     last_password_change: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     email_confirmed: Mapped[bool] = mapped_column(default=False)
+    allowed_confirmation_resend: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow
+    )
 
     __table_args__ = (
         Index("hash_index_users_username", username, postgresql_using="hash"),
@@ -76,7 +80,14 @@ class User(Base):
     )
     ProfilePatchModel = ProfileModel.as_patch()
     FullModel = ProfileModel.extend(
-        columns=[id, email, email_confirmed, last_password_change, onboarding_stage]
+        columns=[
+            id,
+            email,
+            email_confirmed,
+            last_password_change,
+            allowed_confirmation_resend,
+            onboarding_stage,
+        ]
     )
     FullPatchModel = InputModel.extend(
         columns=[(display_name, DisplayNameType), theme, onboarding_stage]
@@ -84,6 +95,14 @@ class User(Base):
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)
+
+    def is_email_confirmation_resend_allowed(self) -> bool:
+        return self.allowed_confirmation_resend < datetime.utcnow()
+
+    def set_confirmation_resend_timeout(self) -> None:
+        self.allowed_confirmation_resend = (
+            datetime.utcnow() + self.email_confirmation_resend_timeout
+        )
 
     @property
     def avatar_path(self) -> Path:

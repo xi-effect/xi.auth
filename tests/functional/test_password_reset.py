@@ -15,9 +15,9 @@ from tests.utils import assert_nodata_response, assert_response, get_db_user
 
 @pytest.mark.anyio()
 async def test_requesting_password_reset(
+    active_session: ActiveSession,
     mock_stack: MockStack,
     client: TestClient,
-    active_session: ActiveSession,
     user: User,
 ) -> None:
     pochta_mock = mock_stack.enter_async_mock(pochta_producer, "send_message")

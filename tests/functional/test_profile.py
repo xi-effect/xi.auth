@@ -1,8 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import pytest
 from faker import Faker
+from freezegun import freeze_time
 from starlette.testclient import TestClient
 
 from app.common.config import pochta_producer
@@ -147,19 +148,46 @@ async def test_changing_user_email(
     pochta_mock = mock_stack.enter_async_mock(pochta_producer, "send_message")
     new_email = faker.email()
 
+    with freeze_time():
+        assert_response(
+            authorized_client.put(
+                "/api/users/current/email/",
+                json={"password": user_data["password"], "new_email": new_email},
+            ),
+            expected_json={**user_data, "email": new_email, "password": None},
+        )
+
+        pochta_mock.assert_called_once()
+        async with active_session():
+            updated_user = await get_db_user(user)
+            assert updated_user.email == new_email
+            assert (
+                await get_db_user(user)
+            ).allowed_confirmation_resend == datetime.now() + timedelta(minutes=10)
+            assert not updated_user.email_confirmed
+
+
+@pytest.mark.anyio()
+async def test_changing_user_email_too_many_emails(
+    faker: Faker,
+    active_session: ActiveSession,
+    user_data: dict[str, Any],
+    user: User,
+    authorized_client: TestClient,
+) -> None:
+    new_email = faker.email()
+
+    async with active_session():
+        (await get_db_user(user)).set_confirmation_resend_timeout()
+
     assert_response(
         authorized_client.put(
             "/api/users/current/email/",
             json={"password": user_data["password"], "new_email": new_email},
         ),
-        expected_json={**user_data, "email": new_email, "password": None},
+        expected_code=429,
+        expected_json={"detail": "Too many emails"},
     )
-
-    pochta_mock.assert_called_once()
-    async with active_session():
-        updated_user = await get_db_user(user)
-        assert updated_user.email == new_email
-        assert not updated_user.email_confirmed
 
 
 @pytest.mark.anyio()
