@@ -14,6 +14,8 @@ from starlette.testclient import TestClient
 
 from supbot.aiogram_extension import TelegramApp
 from supbot.main import telegram_app
+from supbot.models.support_db import SupportTicket
+from tests.conftest import ActiveSession
 from tests.mock_stack import MockStack
 from tests.utils import assert_nodata_response
 
@@ -152,6 +154,16 @@ def tg_chat_id() -> int:
 
 
 @pytest.fixture()
+def message_thread_id() -> int:
+    return id_provider.generate_id()
+
+
+@pytest.fixture()
+def message_id() -> int:
+    return id_provider.generate_id()
+
+
+@pytest.fixture()
 def bot_storage_key(
     mocked_bot: MockedBot,
     tg_user_id: int,
@@ -162,3 +174,13 @@ def bot_storage_key(
         chat_id=tg_chat_id,
         user_id=tg_user_id,
     )
+
+
+@pytest.fixture()
+async def support_ticket(
+    active_session: ActiveSession, message_thread_id: int, tg_chat_id: int
+) -> SupportTicket:
+    async with active_session():
+        return await SupportTicket.create(
+            message_thread_id=message_thread_id, chat_id=tg_chat_id
+        )

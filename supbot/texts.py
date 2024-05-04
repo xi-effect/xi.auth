@@ -1,31 +1,40 @@
 from aiogram.types import BotCommand, KeyboardButton
 
 BOT_COMMANDS: list[BotCommand] = [
-    BotCommand(command="/echo", description="Тестовая команда"),
     BotCommand(command="/support", description="Обращение в поддержку"),
     BotCommand(command="/vacancy", description="Наши вакансии"),
 ]
 
-START_MESSAGE = """
-Привет!
-Я xi.supbot!
+MAIN_MENU_MESSAGE = """
+Главное меню
 """
 
 MAIN_MENU_BUTTON_TEXT = "📋 Главное меню"
 
+SUPPORT_TICKET_CLOSED_EMOJI_ID = "5237699328843200968"  # ✅
+SUPPORT_TICKED_OPENED_EMOJI_ID = "5312241539987020022"  # 🔥
+SUPPORT_ANSWER_DELIVERED_EMOJI = "⚡"
+CLOSE_SUPPORT_BUTTON_TEXT = "❌ Закрыть обращение"
 START_SUPPORT_MESSAGE = """
 Пожалуйста, опишите вашу проблему
 """
-
 WAIT_SUPPORT_MESSAGE = """
 Ваше обращение направлено в поддержку
+Все следующие сообщения мы также получим
 Совсем скоро с вами свяжутся
 Ожидайте...
 """
-
-EXIT_SUPPORT_MESSAGE = """
-Обращение успешно закрыто
+SUPPORT_TOPIC_NAME = "Обращение от "
+CANCEL_SUPPORT_MESSAGE = """
+Ваше обращение успешно закрыто
 """
+CLOSE_SUPPORT_BY_USER_MESSAGE = """
+Обращение закрыто пользователем
+"""
+CLOSE_TICKET_BY_SUPPORT_MESSAGE = """
+Ваше обращение закрыто сотрудником тех. поддержки
+"""
+
 
 TELEGRAM_BASE_URL = "https://www.t.me"
 
