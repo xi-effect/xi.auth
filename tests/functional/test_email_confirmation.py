@@ -19,11 +19,7 @@ async def test_confirming_email(
     assert_nodata_response(
         client.post(
             "/api/email-confirmation/confirmations/",
-            json={
-                "confirmation_token": email_confirmation_cryptography.encrypt(
-                    user.email
-                )
-            },
+            json={"token": email_confirmation_cryptography.encrypt(user.email)},
         ),
     )
 
@@ -39,11 +35,7 @@ async def test_confirming_email_user_not_found(
     assert_response(
         client.post(
             "/api/email-confirmation/confirmations/",
-            json={
-                "confirmation_token": email_confirmation_cryptography.encrypt(
-                    faker.email()
-                )
-            },
+            json={"token": email_confirmation_cryptography.encrypt(faker.email())},
         ),
         expected_code=401,
         expected_json={"detail": "Invalid token"},
@@ -58,7 +50,7 @@ async def test_confirming_email_invalid_token(
     assert_response(
         client.post(
             "/api/email-confirmation/confirmations/",
-            json={"confirmation_token": faker.text()},
+            json={"token": faker.text()},
         ),
         expected_code=401,
         expected_json={"detail": "Invalid token"},
@@ -83,7 +75,7 @@ async def test_confirming_email_expired_token(
     assert_response(
         client.post(
             "/api/email-confirmation/confirmations/",
-            json={"confirmation_token": expired_confirmation_token.decode("utf-8")},
+            json={"token": expired_confirmation_token.decode("utf-8")},
         ),
         expected_code=401,
         expected_json={"detail": "Invalid token"},

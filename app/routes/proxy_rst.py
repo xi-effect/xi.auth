@@ -1,24 +1,20 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Header
+from fastapi import Header
 from starlette.responses import Response
 
+from app.common.fastapi_extension import APIRouterExt
 from app.utils.authorization import (
     AuthCookie,
     AuthHeader,
-    AuthorizedResponses,
     authorize_session,
     authorize_user,
 )
 
-router = APIRouter(tags=["proxy auth"])
+router = APIRouterExt(tags=["proxy auth"])
 
 
-@router.get(
-    "/",
-    status_code=204,
-    responses=AuthorizedResponses.responses(),
-)
+@router.get("/", status_code=204, summary="Retrieve headers for proxy authorization")
 async def proxy_auth(
     response: Response,
     x_request_method: Annotated[str | None, Header(alias="X-Request-Method")] = None,

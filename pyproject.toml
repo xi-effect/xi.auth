@@ -73,6 +73,7 @@ reverse_relative = true
 line_length = 88
 
 [tool.mypy]
+strict = true
 exclude = ["alembic"]
 plugins = "pydantic_marshals.mypy.plugin"
 
@@ -104,6 +105,7 @@ omit = [
   "alembic/*",
   "test/*",
   "app/common/sqla.py",
+  "app/common/fastapi_extension.py",
   "app/utils/setup.py",
   "supbot/setup.py",
   "app/setup_ci.py",

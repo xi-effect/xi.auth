@@ -1,42 +1,37 @@
 from typing import Annotated
 
 from aio_pika import Message
-from fastapi import APIRouter
 from pydantic import Field
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
 
 from app.common.config import email_confirmation_cryptography, pochta_producer
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
-from app.utils.authorization import (
-    AuthorizedResponses,
-    AuthorizedSession,
-    AuthorizedUser,
-)
+from app.utils.authorization import AuthorizedSession, AuthorizedUser
 from app.utils.magic import include_responses
-from app.utils.users import UsernameResponses, is_username_unique
+from app.utils.users import (
+    UserEmailResponses,
+    UsernameResponses,
+    is_email_unique,
+    is_username_unique,
+)
 
-router = APIRouter(tags=["current user"])
+router = APIRouterExt(tags=["current user"])
 
 
 @router.get(
     "/home/",
     response_model=User.FullModel,
-    responses=AuthorizedResponses.responses(),
+    summary="Retrieve current user's profile data",
 )
 async def get_user_data(user: AuthorizedUser) -> User:
     return user
 
 
-@include_responses(UsernameResponses, AuthorizedResponses)
-class UserPatchResponses(Responses):
-    pass
-
-
 @router.patch(
     "/profile/",
     response_model=User.FullModel,
-    responses=UserPatchResponses.responses(),
+    responses=UsernameResponses.responses(),
     summary="Update current user's profile data",
 )
 async def patch_user_data(
@@ -48,7 +43,6 @@ async def patch_user_data(
     return user
 
 
-@include_responses(AuthorizedResponses)
 class PasswordProtectedResponses(Responses):
     WRONG_PASSWORD = (HTTP_401_UNAUTHORIZED, "Wrong password")
 
@@ -57,15 +51,23 @@ class EmailChangeModel(User.PasswordModel):
     new_email: Annotated[str, Field(max_length=100)]
 
 
+@include_responses(PasswordProtectedResponses, UserEmailResponses)
+class EmailChangeResponses(Responses):
+    pass
+
+
 @router.put(
     "/email/",
     response_model=User.FullModel,
-    responses=PasswordProtectedResponses.responses(),
+    responses=EmailChangeResponses.responses(),
     summary="Update current user's email",
 )
 async def change_user_email(user: AuthorizedUser, put_data: EmailChangeModel) -> User:
     if not user.is_password_valid(password=put_data.password):
         raise PasswordProtectedResponses.WRONG_PASSWORD.value
+
+    if not await is_email_unique(put_data.new_email, user.username):
+        raise UserEmailResponses.EMAIL_IN_USE.value
 
     user.email = put_data.new_email
     user.email_confirmed = False

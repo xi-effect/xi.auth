@@ -1,12 +1,13 @@
 from typing import Annotated
 
 from discord_webhook import AsyncDiscordWebhook
-from fastapi import APIRouter, HTTPException
+from fastapi import HTTPException
 from pydantic import BaseModel, Field
 
 from app.common.config import DEMO_WEBHOOK_URL, VACANCY_WEBHOOK_URL
+from app.common.fastapi_extension import APIRouterExt
 
-router = APIRouter(tags=["forms"])
+router = APIRouterExt(tags=["forms"])
 
 
 async def execute_discord_webhook(url: str | None, content: str) -> None:

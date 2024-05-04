@@ -1,40 +1,40 @@
 from aio_pika import Message
-from fastapi import APIRouter, Response
-from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_409_CONFLICT
+from fastapi import Response
+from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.common.config import email_confirmation_cryptography, pochta_producer
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.sessions_db import Session
 from app.models.users_db import User
 from app.utils.authorization import (
-    AuthorizedResponses,
     AuthorizedSession,
     CrossSiteMode,
     add_session_to_response,
     remove_session_from_response,
 )
-from app.utils.magic import include_responses
-from app.utils.users import UsernameResponses
+from app.utils.users import (
+    UserConflictResponses,
+    UserEmailResponses,
+    UsernameResponses,
+    is_email_unique,
+    is_username_unique,
+)
 
-router = APIRouter(tags=["reglog"])
-
-
-@include_responses(UsernameResponses)
-class SignupResponses(Responses):
-    EMAIL_IN_USE = (HTTP_409_CONFLICT, "Email already in use")
+router = APIRouterExt(tags=["reglog"])
 
 
 @router.post(
     "/signup/",
     response_model=User.FullModel,
-    responses=SignupResponses.responses(),
+    responses=UserConflictResponses.responses(),
+    summary="Register a new account",
 )
 async def signup(
     user_data: User.InputModel, cross_site: CrossSiteMode, response: Response
 ) -> User:
-    if await User.find_first_by_kwargs(email=user_data.email) is not None:
-        raise SignupResponses.EMAIL_IN_USE.value
-    if await User.find_first_by_kwargs(username=user_data.username) is not None:
+    if not await is_email_unique(user_data.email):
+        raise UserEmailResponses.EMAIL_IN_USE.value
+    if not await is_username_unique(user_data.username):
         raise UsernameResponses.USERNAME_IN_USE.value
 
     user = await User.create(**user_data.model_dump())
@@ -61,6 +61,7 @@ class SigninResponses(Responses):
     "/signin/",
     response_model=User.FullModel,
     responses=SigninResponses.responses(),
+    summary="Sign in into an existing account (creates a new session)",
 )
 async def signin(
     user_data: User.CredentialsModel, cross_site: CrossSiteMode, response: Response
@@ -79,7 +80,11 @@ async def signin(
     return user
 
 
-@router.post("/signout/", responses=AuthorizedResponses.responses(), status_code=204)
+@router.post(
+    "/signout/",
+    status_code=204,
+    summary="Sign out from current account (disables the current session and removes cookies)",
+)
 async def signout(session: AuthorizedSession, response: Response) -> None:
     session.disabled = True
     remove_session_from_response(response)

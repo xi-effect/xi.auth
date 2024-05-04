@@ -7,7 +7,7 @@ from fastapi.security import APIKeyCookie, APIKeyHeader
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from app.common.config import COOKIE_DOMAIN
-from app.common.responses import Responses
+from app.common.fastapi_extension import Responses, with_responses
 from app.models.sessions_db import Session
 from app.models.users_db import User
 
@@ -47,6 +47,7 @@ class AuthorizedResponses(Responses):
     INVALID_SESSION = (HTTP_401_UNAUTHORIZED, "Session is invalid")
 
 
+@with_responses(AuthorizedResponses)
 async def authorize_session(
     header_token: AuthHeader = None,
     cookie_token: AuthCookie = None,

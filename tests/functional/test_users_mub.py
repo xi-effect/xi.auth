@@ -17,6 +17,7 @@ async def test_user_creation(
 ) -> None:
     user_id: int = assert_response(
         mub_client.post("/mub/users/", json=user_data),
+        expected_code=201,
         expected_json={**user_data, "id": int, "password": None},
     ).json()["id"]
 
@@ -28,21 +29,29 @@ async def test_user_creation(
 
 @pytest.mark.anyio()
 @pytest.mark.parametrize(
-    ("data_mod", "error"),
+    ("pass_unique_email", "pass_unique_password", "error"),
     [
-        pytest.param({"email": "n@new.new"}, "Username already in use", id="username"),
-        pytest.param({"username": "new_one"}, "Email already in use", id="email"),
+        pytest.param(True, False, "Username already in use", id="username"),
+        pytest.param(False, True, "Email already in use", id="email"),
     ],
 )
 async def test_user_creation_conflict(
+    faker: Faker,
     mub_client: TestClient,
     user_data: dict[str, Any],
     user: User,
-    data_mod: dict[str, Any],
+    pass_unique_email: bool,
+    pass_unique_password: bool,
     error: str,
 ) -> None:
+    data_modification: dict[str, Any] = {}
+    if pass_unique_email:
+        data_modification["email"] = faker.email()
+    if pass_unique_password:
+        data_modification["password"] = faker.password()
+
     assert_response(
-        mub_client.post("/mub/users/", json={**user_data, **data_mod}),
+        mub_client.post("/mub/users/", json={**user_data, **data_modification}),
         expected_code=409,
         expected_json={"detail": error},
     )
@@ -90,6 +99,51 @@ async def test_user_updating(
     assert_response(
         mub_client.patch(f"/mub/users/{user.id}/", json=new_user_data),
         expected_json={**user_data, **new_user_data, "id": user.id, "password": None},
+    )
+
+
+@pytest.mark.anyio()
+async def test_user_updating_same_data(
+    mub_client: TestClient,
+    user_data: dict[str, Any],
+    user: User,
+) -> None:
+    assert_response(
+        mub_client.patch(
+            f"/mub/users/{user.id}/",
+            json=user_data,
+        ),
+        expected_json={**user_data, "id": user.id, "password": None},
+    )
+
+
+@pytest.mark.anyio()
+@pytest.mark.parametrize(
+    ("pass_used_email", "pass_used_username", "error"),
+    [
+        pytest.param(False, True, "Username already in use", id="username"),
+        pytest.param(True, False, "Email already in use", id="email"),
+    ],
+)
+async def test_user_updating_conflict(
+    faker: Faker,
+    mub_client: TestClient,
+    other_user: User,
+    user: User,
+    pass_used_email: bool,
+    pass_used_username: bool,
+    error: str,
+) -> None:
+    data_modification: dict[str, Any] = {}
+    if pass_used_email:
+        data_modification["email"] = other_user.email
+    if pass_used_username:
+        data_modification["username"] = other_user.username
+
+    assert_response(
+        mub_client.patch(f"/mub/users/{user.id}/", json=data_modification),
+        expected_code=409,
+        expected_json={"detail": error},
     )
 
 
