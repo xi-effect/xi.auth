@@ -30,7 +30,7 @@ async def exit_vacancy_form(message: MessageExt, state: FSMContext) -> None:
     )
 
 
-@router.message(Command("vacancy"), F.chat.type == "private")
+@router.message(Command("vacancy"), F.chat.type == "private", StateFilter(None))
 @router.message(VacancyStates.sending_specialization, F.text == texts.BACK_BUTTON_TEXT)
 async def start_vacancy_form(message: MessageExt, state: FSMContext) -> None:
     await state.set_state(VacancyStates.starting_form)
