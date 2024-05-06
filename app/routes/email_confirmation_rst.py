@@ -1,10 +1,15 @@
 from aio_pika import Message
-from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_429_TOO_MANY_REQUESTS
+from starlette.status import HTTP_401_UNAUTHORIZED
+
 from app.common.config import email_confirmation_cryptography, pochta_producer
 from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
 from app.utils.authorization import AuthorizedUser
-from app.utils.confirmations import ConfirmationTokenData, TokenVerificationResponses
+from app.utils.confirmations import (
+    ConfirmationTokenData,
+    EmailResendResponses,
+    TokenVerificationResponses,
+)
 
 router = APIRouterExt(tags=["email confirmation"])
 
@@ -31,19 +36,15 @@ async def confirm_email(confirmation_token: ConfirmationTokenData) -> None:
     user.email_confirmed = True
 
 
-class ResendingEmailConfirmationResponses(Responses):
-    TOO_MANY_EMAILS = (HTTP_429_TOO_MANY_REQUESTS, "Too many emails")
-
-
 @router.post(
     "/requests/",
-    responses=ResendingEmailConfirmationResponses.responses(),
+    responses=EmailResendResponses.responses(),
     summary="Resend email confirmation message",
     status_code=204,
 )
 async def resend_email_confirmation(user: AuthorizedUser) -> None:
     if not user.is_email_confirmation_resend_allowed():
-        raise ResendingEmailConfirmationResponses.TOO_MANY_EMAILS
+        raise EmailResendResponses.TOO_MANY_EMAILS
     confirmation_token: str = email_confirmation_cryptography.encrypt(user.email)
     user.set_confirmation_resend_timeout()
     await pochta_producer.send_message(
