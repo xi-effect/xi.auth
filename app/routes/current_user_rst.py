@@ -8,6 +8,7 @@ from app.common.config import email_confirmation_cryptography, pochta_producer
 from app.common.fastapi_extension import APIRouterExt, Responses
 from app.models.users_db import User
 from app.utils.authorization import AuthorizedSession, AuthorizedUser
+from app.utils.confirmations import EmailResendResponses
 from app.utils.magic import include_responses
 from app.utils.users import (
     UserEmailResponses,
@@ -69,9 +70,12 @@ async def change_user_email(user: AuthorizedUser, put_data: EmailChangeModel) ->
     if not await is_email_unique(put_data.new_email, user.username):
         raise UserEmailResponses.EMAIL_IN_USE.value
 
+    if not user.is_email_confirmation_resend_allowed():
+        raise EmailResendResponses.TOO_MANY_EMAILS
+
     user.email = put_data.new_email
     user.email_confirmed = False
-
+    user.set_confirmation_resend_timeout()
     confirmation_token: str = email_confirmation_cryptography.encrypt(user.email)
     await pochta_producer.send_message(
         message=Message(

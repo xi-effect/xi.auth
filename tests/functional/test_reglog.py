@@ -46,7 +46,6 @@ async def test_signing_up(
 
     async with active_session():
         await assert_session_from_cookie(response, cross_site=is_cross_site)
-
         user = await User.find_first_by_id(response.json()["id"])
         assert user is not None
         await user.delete()

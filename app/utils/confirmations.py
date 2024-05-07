@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from starlette.status import HTTP_401_UNAUTHORIZED
+from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_429_TOO_MANY_REQUESTS
 
 from app.common.fastapi_extension import Responses
 
@@ -10,3 +10,7 @@ class TokenVerificationResponses(Responses):
 
 class ConfirmationTokenData(BaseModel):
     token: str
+
+
+class EmailResendResponses(Responses):
+    TOO_MANY_EMAILS = (HTTP_429_TOO_MANY_REQUESTS, "Too many emails")
