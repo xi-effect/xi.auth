@@ -1,72 +1,56 @@
-from fastapi import APIRouter
-
-from app.common.responses import Responses
+from app.common.fastapi_extension import APIRouterExt
 from app.models.users_db import User
-from app.routes.reglog_rst import SignupResponses
-from app.utils.magic import include_responses
-from app.utils.mub import MUBResponses
 from app.utils.users import (
     TargetUser,
+    UserConflictResponses,
+    UserEmailResponses,
     UsernameResponses,
-    UserResponses,
+    is_email_unique,
     is_username_unique,
 )
 
-router = APIRouter(tags=["users mub"])
-
-
-@include_responses(SignupResponses, MUBResponses)
-class MUBUserCreateResponses(Responses):
-    pass
+router = APIRouterExt(tags=["users mub"])
 
 
 @router.post(
-    "/", response_model=User.FullModel, responses=MUBUserCreateResponses.responses()
+    "/",
+    status_code=201,
+    response_model=User.FullModel,
+    responses=UserConflictResponses.responses(),
+    summary="Create a new user",
 )
 async def create_user(user_data: User.InputModel) -> User:
-    if await User.find_first_by_kwargs(email=user_data.email) is not None:
-        raise SignupResponses.EMAIL_IN_USE.value
-    if await User.find_first_by_kwargs(username=user_data.username) is not None:
+    if not await is_email_unique(user_data.email):
+        raise UserEmailResponses.EMAIL_IN_USE.value
+    if not await is_username_unique(user_data.username):
         raise UsernameResponses.USERNAME_IN_USE.value
     return await User.create(**user_data.model_dump())
-
-
-@include_responses(UserResponses, MUBResponses)
-class MUBUserResponses(Responses):
-    pass
 
 
 @router.get(
     "/{user_id}/",
     response_model=User.FullModel,
-    responses=MUBUserResponses.responses(),
+    summary="Retrieve any user by id",
 )
 async def retrieve_user(user: TargetUser) -> User:
     return user
 
 
-@include_responses(UsernameResponses, UserResponses, MUBResponses)
-class MUBUserUpdateResponses(Responses):
-    pass
-
-
 @router.patch(
     "/{user_id}/",
     response_model=User.FullModel,
-    responses=MUBUserUpdateResponses.responses(),
-    summary="Update user's data by id",
+    responses=UserConflictResponses.responses(),
+    summary="Update any user's data by id",
 )
 async def update_user(user: TargetUser, user_data: User.FullPatchModel) -> User:
+    if not await is_email_unique(user_data.email, user.email):
+        raise UserEmailResponses.EMAIL_IN_USE.value
     if not await is_username_unique(user_data.username, user.username):
         raise UsernameResponses.USERNAME_IN_USE.value
     user.update(**user_data.model_dump(exclude_defaults=True))
     return user
 
 
-@router.delete(
-    "/{user_id}/",
-    status_code=204,
-    responses=MUBUserResponses.responses(),
-)
+@router.delete("/{user_id}/", status_code=204, summary="Delete any user by id")
 async def delete_user(user: TargetUser) -> None:
     await user.delete()

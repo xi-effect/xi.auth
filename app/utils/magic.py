@@ -4,7 +4,7 @@ from typing import TypeVar
 
 from aenum import extend_enum  # type: ignore[import-untyped]
 
-from app.common.responses import Responses
+from app.common.fastapi_extension import Responses
 
 T = TypeVar("T", bound=Enum)
 

@@ -1,7 +1,6 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from secrets import token_urlsafe
 from typing import Annotated, ClassVar
 
 from passlib.handlers.pbkdf2 import pbkdf2_sha256
@@ -10,7 +9,7 @@ from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import CHAR, Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.common.config import AVATARS_PATH, Base
+from app.common.config import AVATARS_PATH, Base, token_generator
 
 
 class OnboardingStage(str, enum.Enum):
@@ -24,8 +23,7 @@ class OnboardingStage(str, enum.Enum):
 class User(Base):
     __tablename__ = "users"
     not_found_text: ClassVar[str] = "User not found"
-    token_randomness: ClassVar[int] = 40
-    token_length: ClassVar[int] = 15
+    email_confirmation_resend_timeout: ClassVar[timedelta] = timedelta(minutes=10)
 
     @staticmethod
     def generate_hash(password: str) -> str:
@@ -41,10 +39,13 @@ class User(Base):
     )
     theme: Mapped[str] = mapped_column(String(10), default="system")
 
-    reset_token: Mapped[str | None] = mapped_column(CHAR(token_length))
+    reset_token: Mapped[str | None] = mapped_column(CHAR(token_generator.token_length))
     last_password_change: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
     email_confirmed: Mapped[bool] = mapped_column(default=False)
+    allowed_confirmation_resend: Mapped[datetime] = mapped_column(
+        default=datetime.utcnow
+    )
 
     __table_args__ = (
         Index("hash_index_users_username", username, postgresql_using="hash"),
@@ -55,7 +56,7 @@ class User(Base):
     PasswordType = Annotated[
         str, Field(min_length=6, max_length=100), AfterValidator(generate_hash)
     ]
-    DisplaynameType = Annotated[
+    DisplayNameType = Annotated[
         str | None,
         StringConstraints(strip_whitespace=True),
         Field(min_length=2, max_length=30),
@@ -75,21 +76,33 @@ class User(Base):
     CredentialsModel = MappedModel.create(columns=[email, password])
     UserProfileModel = MappedModel.create(columns=[id, username, display_name])
     ProfileModel = MappedModel.create(
-        columns=[(username, UsernameType), (display_name, DisplaynameType), theme]
+        columns=[(username, UsernameType), (display_name, DisplayNameType), theme]
     )
     ProfilePatchModel = ProfileModel.as_patch()
     FullModel = ProfileModel.extend(
-        columns=[id, email, email_confirmed, onboarding_stage]
+        columns=[
+            id,
+            email,
+            email_confirmed,
+            last_password_change,
+            allowed_confirmation_resend,
+            onboarding_stage,
+        ]
     )
     FullPatchModel = InputModel.extend(
-        columns=[(display_name, DisplaynameType), theme, onboarding_stage]
+        columns=[(display_name, DisplayNameType), theme, onboarding_stage]
     ).as_patch()
 
     def is_password_valid(self, password: str) -> bool:
         return pbkdf2_sha256.verify(password, self.password)
 
-    def generate_token(self) -> str:
-        return token_urlsafe(self.token_randomness)[: self.token_length]
+    def is_email_confirmation_resend_allowed(self) -> bool:
+        return self.allowed_confirmation_resend < datetime.utcnow()
+
+    def set_confirmation_resend_timeout(self) -> None:
+        self.allowed_confirmation_resend = (
+            datetime.utcnow() + self.email_confirmation_resend_timeout
+        )
 
     @property
     def avatar_path(self) -> Path:
@@ -98,10 +111,14 @@ class User(Base):
     @property
     def generated_reset_token(self) -> str:  # noqa: FNE002  # reset is a noun here
         if self.reset_token is None:
-            self.reset_token = self.generate_token()
+            self.reset_token = token_generator.generate_token()
         return self.reset_token
 
+    def change_password(self, password: str) -> None:
+        if not self.is_password_valid(password):
+            self.last_password_change = datetime.utcnow()
+        self.password = self.generate_hash(password)
+
     def reset_password(self, password: str) -> None:
-        self.password = password
-        self.last_password_change = datetime.utcnow()
+        self.change_password(password)
         self.reset_token = None

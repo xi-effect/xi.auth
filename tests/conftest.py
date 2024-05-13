@@ -105,21 +105,33 @@ async def user(
     active_session: ActiveSession,
     user_data: dict[str, Any],
 ) -> User:
-    user_data = {**user_data, "password": User.generate_hash(user_data["password"])}
     async with active_session():
-        return await User.create(**user_data)
+        return await User.create(
+            **{**user_data, "password": User.generate_hash(user_data["password"])},
+        )
+
+
+@pytest.fixture()
+async def other_user_data(faker: Faker) -> dict[str, Any]:
+    return {
+        "username": faker.username(),
+        "email": faker.email(),
+        "password": faker.password(),
+    }
 
 
 @pytest.fixture()
 async def other_user(
     faker: Faker,
     active_session: ActiveSession,
+    other_user_data: dict[str, Any],
 ) -> User:
     async with active_session():
         return await User.create(
-            username=faker.username(),
-            email=faker.email(),
-            password=User.generate_hash(faker.password()),
+            **{
+                **other_user_data,
+                "password": User.generate_hash(other_user_data["password"]),
+            },
         )
 
 

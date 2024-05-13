@@ -1,7 +1,7 @@
 import warnings
 
 from aiogram import Bot, Dispatcher, Router
-from aiogram.types import Message
+from aiogram.types import Message, User
 
 
 class TelegramApp:
@@ -45,3 +45,6 @@ with warnings.catch_warnings():
 
     class MessageExt(Message):
         bot: Bot  # marking bot as required for mypy
+
+    class MessageFromUser(MessageExt):
+        from_user: User  # marking user as required for mypy

@@ -16,8 +16,7 @@ class MockStack(ExitStack):
         mock: Mock | None = None,
         return_value: Any | None = None,
         property_value: Any | None | PydanticUndefinedType = PydanticUndefined,
-    ) -> Mock:
-        ...
+    ) -> Mock: ...
 
     @overload
     def enter_mock(
@@ -28,8 +27,7 @@ class MockStack(ExitStack):
         mock: Mock | None = None,
         return_value: Any | None = None,
         property_value: Any | None | PydanticUndefinedType = PydanticUndefined,
-    ) -> Mock:
-        ...
+    ) -> Mock: ...
 
     def enter_mock(
         self,
@@ -56,8 +54,7 @@ class MockStack(ExitStack):
         /,
         *,
         return_value: Any | None = None,
-    ) -> AsyncMock:
-        ...
+    ) -> AsyncMock: ...
 
     @overload
     def enter_async_mock(
@@ -66,8 +63,7 @@ class MockStack(ExitStack):
         /,
         *,
         return_value: Any | None = None,
-    ) -> AsyncMock:
-        ...
+    ) -> AsyncMock: ...
 
     def enter_async_mock(
         self,
@@ -82,12 +78,10 @@ class MockStack(ExitStack):
         return self.enter_context(patch.object(target, attribute, mock))
 
     @overload
-    def enter_patch(self, target: Any, attribute: str, /) -> Mock:
-        ...
+    def enter_patch(self, target: Any, attribute: str, /) -> Mock: ...
 
     @overload
-    def enter_patch(self, target: str, /) -> Mock:
-        ...
+    def enter_patch(self, target: str, /) -> Mock: ...
 
     def enter_patch(self, target: Any, attribute: str | None = None) -> Mock:
         if attribute is None:

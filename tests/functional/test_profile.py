@@ -1,7 +1,9 @@
+from datetime import datetime, timedelta
 from typing import Any
 
 import pytest
 from faker import Faker
+from freezegun import freeze_time
 from starlette.testclient import TestClient
 
 from app.common.config import pochta_producer
@@ -146,19 +148,62 @@ async def test_changing_user_email(
     pochta_mock = mock_stack.enter_async_mock(pochta_producer, "send_message")
     new_email = faker.email()
 
+    with freeze_time():
+        assert_response(
+            authorized_client.put(
+                "/api/users/current/email/",
+                json={"password": user_data["password"], "new_email": new_email},
+            ),
+            expected_json={**user_data, "email": new_email, "password": None},
+        )
+
+        pochta_mock.assert_called_once()
+        async with active_session():
+            updated_user = await get_db_user(user)
+            assert updated_user.email == new_email
+            assert (
+                await get_db_user(user)
+            ).allowed_confirmation_resend == datetime.now() + timedelta(minutes=10)
+            assert not updated_user.email_confirmed
+
+
+@pytest.mark.anyio()
+async def test_changing_user_email_too_many_emails(
+    faker: Faker,
+    active_session: ActiveSession,
+    user_data: dict[str, Any],
+    user: User,
+    authorized_client: TestClient,
+) -> None:
+    new_email = faker.email()
+
+    async with active_session():
+        (await get_db_user(user)).set_confirmation_resend_timeout()
+
     assert_response(
         authorized_client.put(
             "/api/users/current/email/",
             json={"password": user_data["password"], "new_email": new_email},
         ),
-        expected_json={**user_data, "email": new_email, "password": None},
+        expected_code=429,
+        expected_json={"detail": "Too many emails"},
     )
 
-    pochta_mock.assert_called_once()
-    async with active_session():
-        updated_user = await get_db_user(user)
-        assert updated_user.email == new_email
-        assert not updated_user.email_confirmed
+
+@pytest.mark.anyio()
+async def test_changing_user_email_conflict(
+    authorized_client: TestClient,
+    user_data: dict[str, Any],
+    other_user: User,
+) -> None:
+    assert_response(
+        authorized_client.put(
+            "/api/users/current/email/",
+            json={"password": user_data["password"], "new_email": other_user.email},
+        ),
+        expected_code=409,
+        expected_json={"detail": "Email already in use"},
+    )
 
 
 @pytest.mark.anyio()
@@ -184,7 +229,11 @@ async def test_changing_user_password(
     user_data: dict[str, Any],
     user: User,
 ) -> None:
-    new_password = faker.password()
+    async with active_session():
+        previous_last_password_change: datetime = (
+            await get_db_user(user)
+        ).last_password_change
+    new_password: str = faker.password()
 
     assert_response(
         authorized_client.put(
@@ -195,7 +244,12 @@ async def test_changing_user_password(
     )
 
     async with active_session():
-        assert (await get_db_user(user)).is_password_valid(new_password)
+        user_after_password_changing = await get_db_user(user)
+        assert user_after_password_changing.is_password_valid(new_password)
+        assert (
+            user_after_password_changing.last_password_change
+            > previous_last_password_change
+        )
 
 
 @pytest.mark.anyio()
@@ -210,4 +264,22 @@ async def test_changing_user_password_wrong_password(
         ),
         expected_code=401,
         expected_json={"detail": "Wrong password"},
+    )
+
+
+@pytest.mark.anyio()
+async def test_changing_user_password_old_password(
+    authorized_client: TestClient,
+    user_data: dict[str, Any],
+) -> None:
+    assert_response(
+        authorized_client.put(
+            "/api/users/current/password/",
+            json={
+                "new_password": user_data["password"],
+                "password": user_data["password"],
+            },
+        ),
+        expected_code=409,
+        expected_json={"detail": "New password matches the current one"},
     )

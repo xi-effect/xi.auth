@@ -27,7 +27,7 @@ httpx = "^0.23.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"
 flake8 = "4.0.1"
-black = "^23.1.0"
+black = "^24.3.0"
 pre-commit = "^3.2.1"
 mypy = "^1.1.1"
 flake8-pie = "0.16.0"
@@ -73,6 +73,7 @@ reverse_relative = true
 line_length = 88
 
 [tool.mypy]
+strict = true
 exclude = ["alembic"]
 plugins = "pydantic_marshals.mypy.plugin"
 
@@ -104,6 +105,7 @@ omit = [
   "alembic/*",
   "test/*",
   "app/common/sqla.py",
+  "app/common/fastapi_extension.py",
   "app/utils/setup.py",
   "supbot/setup.py",
   "app/setup_ci.py",

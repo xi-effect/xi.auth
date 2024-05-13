@@ -23,25 +23,27 @@ extend-ignore =
   D I FI TC Q U101 S101 WPS400
 
   # black
-  WPS317 WPS348 C812
+  WPS317 WPS348 E501 C812 C816
   # pydantic-marshals & SQLAlchemy
   VNE003 WPS115
   # weird
-  PIE803 C101 FNE008 N812 ANN101 ANN102 WPS110 WPS111 WPS114 WPS407 VNE001 CM001
+  PIE803 C101 FNE007 FNE008 N812 ANN101 ANN102 WPS110 WPS111 WPS114 WPS407 VNE001 CM001
   # broken
   PIE798 WPS226 WPS354 WPS432 WPS473 WPS507
   U100  # fails to understand `raise NotImplementedError` and overloading
+  WPS338  # bad method ordering conventions
   WPS428  # fails to understand overloading
   WPS465  # fails to understand pipe-unions for types
   WPS601  # fails to same-name class and instance attributes (pydantic & sqlalchemy)
   # to many
-  WPS201 WPS202 WPS204 WPS210 WPS214 WPS217 WPS218 WPS221 WPS234 WPS235
+  WPS201 WPS202 WPS204 WPS210 WPS214 WPS217 WPS218 WPS220 WPS221 WPS234 WPS235
 
   # don't block features
   WPS100  # utils is a module name
   WPS237 WPS305  # f-strings are the best
   WPS306  # python 2.x is deprecated
   WPS347  # vague imports
+  WPS352  # multiline loops
   WPS402  # noqa exists for a reason
   WPS420 WPS604  # pass is a thing
   WPS430  # nested functions
