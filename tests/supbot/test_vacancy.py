@@ -282,9 +282,9 @@ async def test_sending_telegram(
     assert_contains(
         await bot_storage.get_data(bot_storage_key),
         {
-            "telegram": text
-            if is_account_provided
-            else f"{texts.TELEGRAM_BASE_URL}/{username}"
+            "telegram": (
+                text if is_account_provided else f"{texts.TELEGRAM_BASE_URL}/{username}"
+            )
         },
     )
 
