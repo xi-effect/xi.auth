@@ -86,7 +86,7 @@ app.include_router(authorized_router)
 app.include_router(mub_router)
 
 # Proxy
-app.include_router(proxy_rst.router, prefix="/proxy/auth")
+app.include_router(proxy_rst.router)
 
 
 @app.middleware("http")
