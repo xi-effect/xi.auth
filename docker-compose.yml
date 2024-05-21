@@ -54,7 +54,7 @@ services:
         source: ./alembic.ini
         target: /backend/alembic.ini
     environment:
-      DB_LINK: postgresql+asyncpg://test:test@db:5432/test
+      DB_LINK: postgresql+psycopg://test:test@db:5432/test
       DB_SCHEMA: xi_auth
     entrypoint: sh
 
@@ -80,7 +80,7 @@ services:
       - ./tests:/backend/tests
     environment:
       WATCHFILES_FORCE_POLLING: true
-      DB_LINK: postgresql+asyncpg://test:test@db:5432/test
+      DB_LINK: postgresql+psycopg://test:test@db:5432/test
       MQ_URL: amqp://guest:guest@mq
       DB_SCHEMA: xi_auth
       # DATABASE_MIGRATED: "1"
