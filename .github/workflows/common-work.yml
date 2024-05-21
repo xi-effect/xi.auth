@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DB_LINK: 'postgresql+asyncpg://test:test@localhost:5432/test'
+      DB_LINK: 'postgresql+psycopg://test:test@localhost:5432/test'
       DB_SCHEMA: ${{ inputs.database && 'xi_auth' || '' }}
       MQ_URL: 'amqp://guest:guest@localhost/'
 
