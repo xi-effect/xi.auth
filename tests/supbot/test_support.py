@@ -10,7 +10,7 @@ from supbot import texts
 from supbot.models.support_db import SupportTicket
 from supbot.routers.support_tgm import Support
 from tests.mock_stack import MockStack
-from tests.supbot.conftest import MockedBot, WebhookUpdater
+from tests.supbot.conftest import MAIN_MENU_KEYBOARD_MARKUP, MockedBot, WebhookUpdater
 from tests.supbot.factories import MessageFactory, UpdateFactory, UserFactory
 
 
@@ -76,7 +76,7 @@ async def test_exiting_support(
         {
             "chat_id": tg_chat_id,
             "text": texts.MAIN_MENU_MESSAGE,
-            "reply_markup": {"remove_keyboard": True},
+            "reply_markup": MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
     mocked_bot.assert_no_more_api_calls()
@@ -234,7 +234,7 @@ async def test_closing_support_ticket_by_user(
         {
             "chat_id": tg_chat_id,
             "text": texts.CANCEL_SUPPORT_MESSAGE,
-            "reply_markup": {"remove_keyboard": True},
+            "reply_markup": MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
     mocked_bot.assert_no_more_api_calls()

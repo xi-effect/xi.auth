@@ -15,6 +15,7 @@ from starlette.testclient import TestClient
 from supbot.aiogram_extension import TelegramApp
 from supbot.main import telegram_app
 from supbot.models.support_db import SupportTicket
+from supbot.texts import BOT_COMMANDS
 from tests.conftest import ActiveSession
 from tests.mock_stack import MockStack
 from tests.utils import assert_nodata_response
@@ -184,3 +185,9 @@ async def support_ticket(
         return await SupportTicket.create(
             message_thread_id=message_thread_id, chat_id=tg_chat_id
         )
+
+
+MAIN_MENU_KEYBOARD_MARKUP = {
+    "keyboard": [[{"text": command.description} for command in BOT_COMMANDS]],
+    "resize_keyboard": True,
+}
