@@ -28,7 +28,7 @@ async def run_telegram_polling(polling_timeout: int = 30) -> None:
         updates = await telegram_app.bot(get_updates)
         for update in updates:
             await api_client.post(
-                "/updates/", json=update.model_dump(mode="json", exclude_defaults=True)
+                "/updates/", json=update.model_dump(mode="json", exclude_unset=True)
             )
             get_updates.offset = update.update_id + 1
 
