@@ -1,11 +1,11 @@
 from aiogram import F, Router
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 from supbot.aiogram_extension import MessageExt
-from supbot.filters import SupportTicketFilter
+from supbot.filters import SupportTicketFilter, command_filter
 from supbot.models.support_db import SupportTicket
 from supbot.texts import (
     CANCEL_SUPPORT_MESSAGE,
@@ -18,6 +18,7 @@ from supbot.texts import (
     SUPPORT_TICKET_CLOSED_EMOJI_ID,
     SUPPORT_TOPIC_NAME,
     WAIT_SUPPORT_MESSAGE,
+    get_main_menu_keyboard,
 )
 
 router = Router(name="support")
@@ -30,7 +31,7 @@ class Support(StatesGroup):
 
 @router.message(
     StateFilter(None),
-    Command("support"),
+    command_filter("support"),
     F.chat.type == "private",
 )
 async def start_support(message: MessageExt, state: FSMContext) -> None:
@@ -46,11 +47,11 @@ async def start_support(message: MessageExt, state: FSMContext) -> None:
 
 @router.message(Support.start, F.text == MAIN_MENU_BUTTON_TEXT)
 async def exit_support(message: MessageExt, state: FSMContext) -> None:
+    await state.clear()
     await message.answer(
         text=MAIN_MENU_MESSAGE,
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=get_main_menu_keyboard(),
     )
-    await state.clear()
 
 
 @router.message(Support.start)
@@ -122,7 +123,7 @@ async def close_support_ticket_by_user(
     )
     await message.answer(
         text=CANCEL_SUPPORT_MESSAGE,
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=get_main_menu_keyboard(),
     )
 
     ticket.closed = True

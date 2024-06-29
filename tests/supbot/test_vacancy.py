@@ -12,7 +12,7 @@ from app.routes.forms_rst import VacancyFormSchema
 from supbot import texts
 from supbot.routers.vacancy_tgm import VacancyStates
 from tests.mock_stack import MockStack
-from tests.supbot.conftest import MockedBot, WebhookUpdater
+from tests.supbot.conftest import MAIN_MENU_KEYBOARD_MARKUP, MockedBot, WebhookUpdater
 from tests.supbot.factories import MessageFactory, UpdateFactory, UserFactory
 
 NAVIGATION_KEYBOARD_MARKUP = {
@@ -46,7 +46,6 @@ SENDING_INFO_KEYBOARD_MARKUP = {
         [{"text": texts.BACK_BUTTON_TEXT}, {"text": texts.MAIN_MENU_BUTTON_TEXT}],
     ],
 }
-KEYBOARD_REMOVAL_MARKUP = {"remove_keyboard": True}
 
 
 @pytest.mark.anyio()
@@ -123,7 +122,7 @@ async def test_exiting_vacancy_form(
         {
             "chat_id": tg_chat_id,
             "text": texts.EXIT_VACANCY_FORM_MESSAGE,
-            "reply_markup": KEYBOARD_REMOVAL_MARKUP,
+            "reply_markup": MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
     mocked_bot.assert_no_more_api_calls()
@@ -386,7 +385,7 @@ async def test_sending_comment(
         {
             "chat_id": tg_chat_id,
             "text": texts.VACANCY_FORM_FINAL_MESSAGE,
-            "reply_markup": KEYBOARD_REMOVAL_MARKUP,
+            "reply_markup": MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
     mocked_bot.assert_no_more_api_calls()
