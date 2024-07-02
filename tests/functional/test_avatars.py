@@ -77,3 +77,13 @@ async def test_avatar_deletion(authorized_client: TestClient, user: User) -> Non
     assert_nodata_response(authorized_client.delete("/api/users/current/avatar/"))
 
     assert not user.avatar_path.is_file()
+
+
+@pytest.mark.anyio()
+@pytest.mark.usefixtures("_create_avatar")
+async def test_mub_user_deletion_with_avatar(
+    mub_client: TestClient, user: User
+) -> None:
+    assert_nodata_response(mub_client.delete(f"/mub/users/{user.id}/"))
+
+    assert not user.avatar_path.is_file()
