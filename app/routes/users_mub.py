@@ -54,3 +54,4 @@ async def update_user(user: TargetUser, user_data: User.FullPatchModel) -> User:
 @router.delete("/{user_id}/", status_code=204, summary="Delete any user by id")
 async def delete_user(user: TargetUser) -> None:
     await user.delete()
+    user.avatar_path.unlink(missing_ok=True)

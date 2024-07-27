@@ -13,6 +13,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-added-large-files
+        exclude: static/swagger-ui-bundle.js
       # executable files:
       - id: check-executables-have-shebangs
       # other files (markup & docs):
