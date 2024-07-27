@@ -98,6 +98,7 @@ exclude_lines = [
   "if __name__ == [\"']__main__[\"']:",
   "class .*\\(Protocol\\):",
   "@abstractmethod",
+  "custom_swagger_ui_html",
   "@mark.skip",
   "!wow!",
 ]

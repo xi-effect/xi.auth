@@ -90,6 +90,11 @@ async def custom_swagger_ui_html() -> Response:
         title="xi.auth",
         swagger_js_url="/static/swagger-ui-bundle.js",
         swagger_css_url="/static/swagger-ui.css",
+        swagger_favicon_url=(
+            '/static/favicon-for-light.svg">\n'
+            + '<link rel="icon" href="/static/favicon-for-dark.svg" '
+            + 'media="(prefers-color-scheme: dark)'
+        ),
     )
 
 
