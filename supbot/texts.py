@@ -1,12 +1,23 @@
 from aiogram.types import BotCommand, KeyboardButton
 
+COMMAND_DESCRIPTIONS = {
+    "/support": "Обращение в поддержку",
+    "/vacancy": "Наши вакансии",
+}
+
 BOT_COMMANDS: list[BotCommand] = [
-    BotCommand(command="/support", description="Обращение в поддержку"),
-    BotCommand(command="/vacancy", description="Наши вакансии"),
+    BotCommand(command=command, description=COMMAND_DESCRIPTIONS[command])
+    for command in COMMAND_DESCRIPTIONS
 ]
 
+MAIN_MENU_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
+    [KeyboardButton(text=command.description) for command in BOT_COMMANDS]
+]
+
+WELCOME_MESSAGE = "Добро пожаловать!"
+
 MAIN_MENU_MESSAGE = """
-Главное меню
+Выберите нужный пункт меню:
 """
 
 MAIN_MENU_BUTTON_TEXT = "📋 Главное меню"
@@ -31,6 +42,9 @@ CANCEL_SUPPORT_MESSAGE = """
 CLOSE_SUPPORT_BY_USER_MESSAGE = """
 Обращение закрыто пользователем
 """
+CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE = """
+Пользователь заблокировал бота. Тикет закрыт автоматически.
+"""
 CLOSE_TICKET_BY_SUPPORT_MESSAGE = """
 Ваше обращение закрыто сотрудником тех. поддержки
 """
@@ -52,9 +66,11 @@ CHOOSE_VACANCY_MESSAGE = "Выберите вакансию или введит�
 SEND_NAME_MESSAGE = "Как к вам можно обращаться?"
 SEND_TELEGRAM_MESSAGE = "Ваш телеграм для обратной связи"
 SEND_RESUME_MESSAGE = "Ссылка на ваше резюме"
-WRONG_USER_MESSAGE = "Мы не поддерживаем такие сообщения"
 SEND_INFO_MESSAGE = "Почти готово. Можете оставить для нас сообщение :)"
 VACANCY_FORM_FINAL_MESSAGE = "Спасибо! Мы обязательно рассмотрим ваш отклик и ответим."
+VACANCY_INVALID_INPUT_TYPE_MESSAGE = """
+Пожалуйста, используйте только текстовые сообщения или кнопки для заполнения формы вакансии.
+"""
 
 CONTINUE_IN_BOT_KEYBOARD_TEXT = "Продолжить через бота"
 VACANCY_FORM_EPILOGUE_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [

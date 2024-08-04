@@ -1,6 +1,6 @@
 from aiogram import F, Router
 from aiogram.fsm.storage.base import BaseStorage, StorageKey
-from aiogram.types import ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardMarkup
 from aiogram.types.reaction_type_emoji import ReactionTypeEmoji
 
 from supbot.aiogram_extension import MessageExt
@@ -8,6 +8,7 @@ from supbot.filters import SupportTicketFilter
 from supbot.models.support_db import SupportTicket
 from supbot.texts import (
     CLOSE_TICKET_BY_SUPPORT_MESSAGE,
+    MAIN_MENU_KEYBOARD_MARKUP,
     SUPPORT_ANSWER_DELIVERED_EMOJI,
     SUPPORT_TICKET_CLOSED_EMOJI_ID,
 )
@@ -45,7 +46,9 @@ async def close_ticket_by_support(
     await message.bot.send_message(
         chat_id=ticket.chat_id,
         text=CLOSE_TICKET_BY_SUPPORT_MESSAGE,
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+        ),
     )
     await message.bot.edit_forum_topic(
         chat_id=group_id,

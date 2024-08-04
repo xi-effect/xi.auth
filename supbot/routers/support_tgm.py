@@ -1,17 +1,20 @@
 from aiogram import F, Router
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import KICKED, ChatMemberUpdatedFilter, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.fsm.storage.base import BaseStorage, StorageKey
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-from supbot.aiogram_extension import MessageExt
-from supbot.filters import SupportTicketFilter
+from supbot.aiogram_extension import ChatMemberUpdatedExt, MessageExt
+from supbot.filters import SupportTicketFilter, command_filter
 from supbot.models.support_db import SupportTicket
 from supbot.texts import (
     CANCEL_SUPPORT_MESSAGE,
     CLOSE_SUPPORT_BUTTON_TEXT,
     CLOSE_SUPPORT_BY_USER_MESSAGE,
+    CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE,
     MAIN_MENU_BUTTON_TEXT,
+    MAIN_MENU_KEYBOARD_MARKUP,
     MAIN_MENU_MESSAGE,
     START_SUPPORT_MESSAGE,
     SUPPORT_TICKED_OPENED_EMOJI_ID,
@@ -30,7 +33,7 @@ class Support(StatesGroup):
 
 @router.message(
     StateFilter(None),
-    Command("support"),
+    command_filter("support"),
     F.chat.type == "private",
 )
 async def start_support(message: MessageExt, state: FSMContext) -> None:
@@ -48,7 +51,9 @@ async def start_support(message: MessageExt, state: FSMContext) -> None:
 async def exit_support(message: MessageExt, state: FSMContext) -> None:
     await message.answer(
         text=MAIN_MENU_MESSAGE,
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+        ),
     )
     await state.clear()
 
@@ -122,9 +127,42 @@ async def close_support_ticket_by_user(
     )
     await message.answer(
         text=CANCEL_SUPPORT_MESSAGE,
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+        ),
     )
 
     ticket.closed = True
 
     await state.clear()
+
+
+@router.my_chat_member(
+    ChatMemberUpdatedFilter(member_status_changed=KICKED),
+    SupportTicketFilter(),
+)
+async def close_ticket_after_bot_blocked(
+    event: ChatMemberUpdatedExt,
+    group_id: int,
+    fsm_storage: BaseStorage,
+    ticket: SupportTicket,
+) -> None:
+    await event.bot.close_forum_topic(
+        chat_id=group_id,
+        message_thread_id=ticket.message_thread_id,
+    )
+    await event.bot.edit_forum_topic(
+        chat_id=group_id,
+        message_thread_id=ticket.message_thread_id,
+        icon_custom_emoji_id=SUPPORT_TICKET_CLOSED_EMOJI_ID,
+    )
+    await event.bot.send_message(
+        chat_id=group_id,
+        text=CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE,
+        message_thread_id=ticket.message_thread_id,
+    )
+
+    key = StorageKey(event.bot.id, ticket.chat_id, event.from_user.id)
+    await fsm_storage.set_state(key, None)
+
+    ticket.closed = True

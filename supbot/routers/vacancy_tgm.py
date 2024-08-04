@@ -1,12 +1,13 @@
 from aiogram import F, Router
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import ReplyKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardMarkup
 
 from app.routes.forms_rst import VacancyFormSchema, apply_for_vacancy
 from supbot import texts
 from supbot.aiogram_extension import MessageExt, MessageFromUser
+from supbot.filters import command_filter
 
 router = Router()
 
@@ -24,13 +25,16 @@ class VacancyStates(StatesGroup):
     StateFilter(*VacancyStates.__all_states__), F.text == texts.MAIN_MENU_BUTTON_TEXT
 )
 async def exit_vacancy_form(message: MessageExt, state: FSMContext) -> None:
-    await state.clear()
     await message.answer(
-        text=texts.EXIT_VACANCY_FORM_MESSAGE, reply_markup=ReplyKeyboardRemove()
+        text=texts.EXIT_VACANCY_FORM_MESSAGE,
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=texts.MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+        ),
     )
+    await state.clear()
 
 
-@router.message(Command("vacancy"), F.chat.type == "private", StateFilter(None))
+@router.message(command_filter("vacancy"), F.chat.type == "private", StateFilter(None))
 @router.message(VacancyStates.sending_specialization, F.text == texts.BACK_BUTTON_TEXT)
 async def start_vacancy_form(message: MessageExt, state: FSMContext) -> None:
     await state.set_state(VacancyStates.starting_form)
@@ -113,7 +117,7 @@ async def set_telegram_and_request_resume(
     )
 
 
-@router.message(VacancyStates.sending_resume)
+@router.message(VacancyStates.sending_resume, F.text)
 @router.message(VacancyStates.sending_comment, F.text == texts.BACK_BUTTON_TEXT)
 async def set_resume_and_request_comment(
     message: MessageExt, state: FSMContext
@@ -133,7 +137,6 @@ async def set_resume_and_request_comment(
 @router.message(VacancyStates.sending_comment, F.text)
 async def submit_vacancy_form(message: MessageExt, state: FSMContext) -> None:
     answers = await state.get_data()
-    await state.clear()
     if message.text != texts.SKIP_BUTTON_TEXT:
         answers["message"] = message.text
 
@@ -149,5 +152,16 @@ async def submit_vacancy_form(message: MessageExt, state: FSMContext) -> None:
 
     await message.answer(
         text=texts.VACANCY_FORM_FINAL_MESSAGE,
-        reply_markup=ReplyKeyboardRemove(),
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=texts.MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+        ),
     )
+    await state.clear()
+
+
+@router.message(
+    StateFilter(*VacancyStates.__all_states__),
+    ~F.text,
+)
+async def handle_unsupported_message(message: MessageExt) -> None:
+    await message.answer(text=texts.VACANCY_INVALID_INPUT_TYPE_MESSAGE)

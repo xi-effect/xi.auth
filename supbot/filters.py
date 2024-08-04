@@ -1,10 +1,12 @@
 from typing import Any
 
-from aiogram.filters import Filter
+from aiogram import F
+from aiogram.filters import Command, Filter, or_f
 from aiogram.fsm.context import FSMContext
 
 from supbot.aiogram_extension import MessageExt
 from supbot.models.support_db import SupportTicket
+from supbot.texts import COMMAND_DESCRIPTIONS
 
 
 class SupportTicketFilter(Filter):
@@ -26,3 +28,10 @@ class SupportTicketFilter(Filter):
             return False
 
         return {"ticket": ticket}
+
+
+def command_filter(command: str) -> Filter:
+    return or_f(
+        Command(command),
+        F.text == COMMAND_DESCRIPTIONS[f"/{command}"],
+    )
