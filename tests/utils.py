@@ -6,9 +6,9 @@ from httpx import Response
 from pydantic_marshals.contains import TypeChecker, assert_contains
 
 from app.common.config import COOKIE_DOMAIN
-from app.models.sessions_db import Session
-from app.models.users_db import User
-from app.utils.authorization import AUTH_COOKIE_NAME
+from app.users.models.sessions_db import Session
+from app.users.models.users_db import User
+from app.users.utils.authorization import AUTH_COOKIE_NAME
 
 
 def assert_nodata_response(

@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup
 
-from app.routes.forms_rst import VacancyFormSchema, apply_for_vacancy
+from app.users.routes.forms_rst import VacancyFormSchema, apply_for_vacancy
 from supbot import texts
 from supbot.aiogram_extension import MessageExt, MessageFromUser
 from supbot.filters import command_filter

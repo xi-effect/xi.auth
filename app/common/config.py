@@ -9,9 +9,9 @@ from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
+from app.common.aiopika_ext import RabbitDirectProducer
 from app.common.cryptography import CryptographyProvider, TokenGenerator
-from app.common.rabbit import RabbitDirectProducer
-from app.common.sqla import MappingBase
+from app.common.sqlalchemy_ext import MappingBase
 
 current_directory: Path = Path.cwd()
 

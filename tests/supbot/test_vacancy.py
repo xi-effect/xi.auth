@@ -8,7 +8,7 @@ from aiogram.types import Chat, InputMediaDocument, InputMediaPhoto, InputMediaV
 from faker import Faker
 from pydantic_marshals.contains import assert_contains
 
-from app.routes.forms_rst import VacancyFormSchema
+from app.users.routes.forms_rst import VacancyFormSchema
 from supbot import texts
 from supbot.routers.vacancy_tgm import VacancyStates
 from tests.mock_stack import MockStack
