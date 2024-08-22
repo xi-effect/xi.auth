@@ -57,7 +57,6 @@ SKIP_BUTTON_TEXT = "Пропустить"
 
 # Vacancy Form Start
 VACANCIES_WEBSITE_URL = "https://vacancy.xieffect.ru/vacancy"
-EXIT_VACANCY_FORM_MESSAGE = "Будем ждать вас снова!"
 STARTING_VACANCY_FORM_MESSAGE = f"""
 Вы можете выбрать интересующую вакансию
 через бота или по ссылке {VACANCIES_WEBSITE_URL}
@@ -95,6 +94,7 @@ SPECIALIZATIONS: list[str] = [
     "Графический дизайнер",
     "Product manager",
     "SMM-специалист",
+    # TODO add QAs
 ]
 CHOOSE_SPECIALIZATION_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
     *[[KeyboardButton(text=SPECIALIZATION)] for SPECIALIZATION in SPECIALIZATIONS],

@@ -125,7 +125,7 @@ async def test_exiting_vacancy_form(
         SendMessage,
         {
             "chat_id": tg_chat_id,
-            "text": texts.EXIT_VACANCY_FORM_MESSAGE,
+            "text": texts.MAIN_MENU_MESSAGE,
             "reply_markup": EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
