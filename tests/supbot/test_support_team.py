@@ -7,7 +7,11 @@ from aiogram.types.forum_topic_closed import ForumTopicClosed
 
 from supbot import texts
 from supbot.models.support_db import SupportTicket
-from tests.supbot.conftest import MockedBot, WebhookUpdater
+from tests.supbot.conftest import (
+    EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
+    MockedBot,
+    WebhookUpdater,
+)
 from tests.supbot.factories import MessageFactory, UpdateFactory, UserFactory
 
 
@@ -85,7 +89,7 @@ async def test_closing_ticket_by_support(
         {
             "chat_id": tg_chat_id,
             "text": texts.CLOSE_TICKET_BY_SUPPORT_MESSAGE,
-            "reply_markup": {"remove_keyboard": True},
+            "reply_markup": EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
     mocked_bot.assert_next_api_call(

@@ -1,7 +1,7 @@
 import warnings
 
 from aiogram import Bot, Dispatcher, Router
-from aiogram.types import Message, User
+from aiogram.types import ChatMemberUpdated, Message, User
 
 
 class TelegramApp:
@@ -42,6 +42,9 @@ class TelegramApp:
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore", UserWarning)
+
+    class ChatMemberUpdatedExt(ChatMemberUpdated):
+        bot: Bot  # marking bot as required for mypy
 
     class MessageExt(Message):
         bot: Bot  # marking bot as required for mypy
