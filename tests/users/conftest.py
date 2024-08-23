@@ -10,8 +10,8 @@ from app.main import app
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
 from app.users.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
-from tests.conftest import ActiveSession, Factory
-from tests.utils import PytestRequest
+from tests.common.active_session import ActiveSession
+from tests.common.types import Factory, PytestRequest
 
 
 @pytest.fixture(scope="session")

@@ -9,8 +9,8 @@ from app.common.config import COOKIE_DOMAIN
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
 from app.users.utils.authorization import AUTH_COOKIE_NAME, authorize_user
-from tests.conftest import ActiveSession
-from tests.mock_stack import MockStack
+from tests.common.active_session import ActiveSession
+from tests.common.mock_stack import MockStack
 from tests.utils import get_db_session
 
 days_to_renew: Final[int] = (Session.expiry_timeout - Session.renew_period_length).days

@@ -3,8 +3,9 @@ from faker import Faker
 from starlette.testclient import TestClient
 
 from app.users.models.users_db import OnboardingStage, User
-from tests.conftest import ActiveSession
-from tests.utils import assert_nodata_response, assert_response, get_db_user
+from tests.common.active_session import ActiveSession
+from tests.common.assert_contains_ext import assert_nodata_response, assert_response
+from tests.utils import get_db_user
 
 
 @pytest.mark.parametrize("method", ["PUT", "DELETE"])

@@ -1,7 +1,7 @@
 from faker import Faker
 from starlette.testclient import TestClient
 
-from tests.utils import assert_nodata_response
+from tests.common.assert_contains_ext import assert_nodata_response, assert_response
 
 
 def test_redirecting_on_tailing_stash(client: TestClient) -> None:
@@ -28,7 +28,7 @@ def test_setting_cors_headers_options(faker: Faker, client: TestClient) -> None:
 
 def test_setting_cors_headers(faker: Faker, client: TestClient) -> None:
     hostname: str = faker.hostname()
-    assert_nodata_response(
+    assert_response(
         client.post(
             "/api/signup/",
             headers={"Origin": hostname},
@@ -38,4 +38,5 @@ def test_setting_cors_headers(faker: Faker, client: TestClient) -> None:
             "access-control-allow-origin": hostname,
             "access-control-allow-credentials": "true",
         },
+        expected_json={},
     )

@@ -2,8 +2,8 @@ import pytest
 from starlette.testclient import TestClient
 
 from app.users.models.users_db import User
-from tests.conftest import ActiveSession
-from tests.utils import assert_response
+from tests.common.active_session import ActiveSession
+from tests.common.assert_contains_ext import assert_response
 
 
 @pytest.mark.anyio()

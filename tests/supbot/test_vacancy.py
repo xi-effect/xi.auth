@@ -11,7 +11,7 @@ from pydantic_marshals.contains import assert_contains
 from app.supbot import texts
 from app.supbot.routers.vacancy_tgm import VacancyStates
 from app.users.routes.forms_rst import VacancyFormSchema
-from tests.mock_stack import MockStack
+from tests.common.mock_stack import MockStack
 from tests.supbot.conftest import (
     EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
     MockedBot,

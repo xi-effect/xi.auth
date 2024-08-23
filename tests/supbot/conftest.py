@@ -16,9 +16,9 @@ from app.supbot import texts
 from app.supbot.main import telegram_app
 from app.supbot.models.support_db import SupportTicket
 from app.supbot.utils.aiogram_ext import TelegramApp
-from tests.conftest import ActiveSession
-from tests.mock_stack import MockStack
-from tests.utils import assert_nodata_response
+from tests.common.active_session import ActiveSession
+from tests.common.assert_contains_ext import assert_nodata_response
+from tests.common.mock_stack import MockStack
 
 
 class IDProvider:

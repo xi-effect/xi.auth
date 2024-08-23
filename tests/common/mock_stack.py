@@ -1,7 +1,9 @@
+from collections.abc import Iterator
 from contextlib import ExitStack
 from typing import Any, overload
 from unittest.mock import AsyncMock, Mock, PropertyMock, patch
 
+import pytest
 from pydantic_core import PydanticUndefined, PydanticUndefinedType
 
 
@@ -87,3 +89,9 @@ class MockStack(ExitStack):
         if attribute is None:
             return self.enter_context(patch(target))
         return self.enter_context(patch.object(target, attribute))
+
+
+@pytest.fixture()
+def mock_stack() -> Iterator[MockStack]:
+    with MockStack() as stack:
+        yield stack

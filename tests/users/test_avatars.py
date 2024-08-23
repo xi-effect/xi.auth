@@ -5,7 +5,7 @@ from faker import Faker
 from starlette.testclient import TestClient
 
 from app.users.models.users_db import User
-from tests.utils import assert_nodata_response, assert_response
+from tests.common.assert_contains_ext import assert_nodata_response, assert_response
 
 
 @pytest.fixture()
