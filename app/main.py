@@ -10,7 +10,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
-from app import users
+from app import supbot, users
 from app.common.config import (
     DATABASE_MIGRATED,
     MQ_URL,
@@ -22,7 +22,6 @@ from app.common.config import (
 )
 from app.common.sqlalchemy_ext import session_context
 from app.common.starlette_cors_ext import CorrectCORSMiddleware
-from supbot.setup import maybe_initialize_telegram_app
 
 
 async def reinit_database() -> None:
@@ -45,10 +44,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
     rabbit_connection = await connect_rabbit()
 
-    await maybe_initialize_telegram_app()
-
     async with AsyncExitStack() as stack:
         await stack.enter_async_context(users.lifespan())
+        await stack.enter_async_context(supbot.lifespan())
 
         yield
 
@@ -89,6 +87,7 @@ app.add_middleware(
 )
 
 app.include_router(users.api_router)
+app.include_router(supbot.api_router)
 
 
 @app.middleware("http")

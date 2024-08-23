@@ -4,7 +4,7 @@ from aiogram.types import ChatMemberUpdated, Message, Update, User
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel
 
-T = TypeVar("T", bound="BaseModel")
+T = TypeVar("T", bound=BaseModel)
 
 
 class BaseModelFactory(ModelFactory[T], Generic[T]):

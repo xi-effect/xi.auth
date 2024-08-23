@@ -5,23 +5,10 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.base import BaseStorage, StorageKey
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-from supbot.aiogram_extension import ChatMemberUpdatedExt, MessageExt
-from supbot.filters import SupportTicketFilter, command_filter
-from supbot.models.support_db import SupportTicket
-from supbot.texts import (
-    CANCEL_SUPPORT_MESSAGE,
-    CLOSE_SUPPORT_BUTTON_TEXT,
-    CLOSE_SUPPORT_BY_USER_MESSAGE,
-    CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE,
-    MAIN_MENU_BUTTON_TEXT,
-    MAIN_MENU_KEYBOARD_MARKUP,
-    MAIN_MENU_MESSAGE,
-    START_SUPPORT_MESSAGE,
-    SUPPORT_TICKED_OPENED_EMOJI_ID,
-    SUPPORT_TICKET_CLOSED_EMOJI_ID,
-    SUPPORT_TOPIC_NAME,
-    WAIT_SUPPORT_MESSAGE,
-)
+from app.supbot import texts
+from app.supbot.models.support_db import SupportTicket
+from app.supbot.utils.aiogram_ext import ChatMemberUpdatedExt, MessageExt
+from app.supbot.utils.filters import SupportTicketFilter, command_filter
 
 router = Router(name="support")
 
@@ -38,21 +25,21 @@ class Support(StatesGroup):
 )
 async def start_support(message: MessageExt, state: FSMContext) -> None:
     await message.answer(
-        text=START_SUPPORT_MESSAGE,
+        text=texts.START_SUPPORT_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text=MAIN_MENU_BUTTON_TEXT)]],
+            keyboard=[[KeyboardButton(text=texts.MAIN_MENU_BUTTON_TEXT)]],
             resize_keyboard=True,
         ),
     )
     await state.set_state(Support.start)
 
 
-@router.message(Support.start, F.text == MAIN_MENU_BUTTON_TEXT)
+@router.message(Support.start, F.text == texts.MAIN_MENU_BUTTON_TEXT)
 async def exit_support(message: MessageExt, state: FSMContext) -> None:
     await message.answer(
-        text=MAIN_MENU_MESSAGE,
+        text=texts.MAIN_MENU_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+            keyboard=texts.MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
         ),
     )
     await state.clear()
@@ -64,8 +51,8 @@ async def create_support_ticket(
 ) -> None:
     topic = await message.bot.create_forum_topic(
         chat_id=group_id,
-        name=f"{SUPPORT_TOPIC_NAME}{message.chat.username}",
-        icon_custom_emoji_id=SUPPORT_TICKED_OPENED_EMOJI_ID,
+        name=f"{texts.SUPPORT_TOPIC_NAME}{message.chat.username}",
+        icon_custom_emoji_id=texts.SUPPORT_TICKED_OPENED_EMOJI_ID,
     )
     await SupportTicket.create(
         message_thread_id=topic.message_thread_id,
@@ -76,9 +63,9 @@ async def create_support_ticket(
         message_thread_id=topic.message_thread_id,
     )
     await message.answer(
-        text=WAIT_SUPPORT_MESSAGE,
+        text=texts.WAIT_SUPPORT_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text=CLOSE_SUPPORT_BUTTON_TEXT)]],
+            keyboard=[[KeyboardButton(text=texts.CLOSE_SUPPORT_BUTTON_TEXT)]],
             resize_keyboard=True,
         ),
     )
@@ -88,7 +75,7 @@ async def create_support_ticket(
 
 @router.message(
     Support.conversation,
-    F.text != CLOSE_SUPPORT_BUTTON_TEXT,
+    F.text != texts.CLOSE_SUPPORT_BUTTON_TEXT,
     SupportTicketFilter(),
 )
 async def send_message_to_support(
@@ -102,7 +89,7 @@ async def send_message_to_support(
 
 @router.message(
     Support.conversation,
-    F.text == CLOSE_SUPPORT_BUTTON_TEXT,
+    F.text == texts.CLOSE_SUPPORT_BUTTON_TEXT,
     SupportTicketFilter(),
 )
 async def close_support_ticket_by_user(
@@ -118,17 +105,17 @@ async def close_support_ticket_by_user(
     await message.bot.edit_forum_topic(
         chat_id=group_id,
         message_thread_id=ticket.message_thread_id,
-        icon_custom_emoji_id=SUPPORT_TICKET_CLOSED_EMOJI_ID,
+        icon_custom_emoji_id=texts.SUPPORT_TICKET_CLOSED_EMOJI_ID,
     )
     await message.bot.send_message(
         chat_id=group_id,
-        text=CLOSE_SUPPORT_BY_USER_MESSAGE,
+        text=texts.CLOSE_SUPPORT_BY_USER_MESSAGE,
         message_thread_id=ticket.message_thread_id,
     )
     await message.answer(
-        text=CANCEL_SUPPORT_MESSAGE,
+        text=texts.CANCEL_SUPPORT_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+            keyboard=texts.MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
         ),
     )
 
@@ -154,11 +141,11 @@ async def close_ticket_after_bot_blocked(
     await event.bot.edit_forum_topic(
         chat_id=group_id,
         message_thread_id=ticket.message_thread_id,
-        icon_custom_emoji_id=SUPPORT_TICKET_CLOSED_EMOJI_ID,
+        icon_custom_emoji_id=texts.SUPPORT_TICKET_CLOSED_EMOJI_ID,
     )
     await event.bot.send_message(
         chat_id=group_id,
-        text=CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE,
+        text=texts.CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE,
         message_thread_id=ticket.message_thread_id,
     )
 

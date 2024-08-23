@@ -3,15 +3,10 @@ from aiogram.fsm.storage.base import BaseStorage, StorageKey
 from aiogram.types import ReplyKeyboardMarkup
 from aiogram.types.reaction_type_emoji import ReactionTypeEmoji
 
-from supbot.aiogram_extension import MessageExt
-from supbot.filters import SupportTicketFilter
-from supbot.models.support_db import SupportTicket
-from supbot.texts import (
-    CLOSE_TICKET_BY_SUPPORT_MESSAGE,
-    MAIN_MENU_KEYBOARD_MARKUP,
-    SUPPORT_ANSWER_DELIVERED_EMOJI,
-    SUPPORT_TICKET_CLOSED_EMOJI_ID,
-)
+from app.supbot import texts
+from app.supbot.models.support_db import SupportTicket
+from app.supbot.utils.aiogram_ext import MessageExt
+from app.supbot.utils.filters import SupportTicketFilter
 
 router = Router(name="support team")
 
@@ -30,7 +25,7 @@ async def send_message_to_user(
     await message.bot.set_message_reaction(
         chat_id=group_id,
         message_id=message.message_id,
-        reaction=[ReactionTypeEmoji(emoji=SUPPORT_ANSWER_DELIVERED_EMOJI)],
+        reaction=[ReactionTypeEmoji(emoji=texts.SUPPORT_ANSWER_DELIVERED_EMOJI)],
     )
 
 
@@ -45,15 +40,15 @@ async def close_ticket_by_support(
 ) -> None:
     await message.bot.send_message(
         chat_id=ticket.chat_id,
-        text=CLOSE_TICKET_BY_SUPPORT_MESSAGE,
+        text=texts.CLOSE_TICKET_BY_SUPPORT_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
-            keyboard=MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
+            keyboard=texts.MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
         ),
     )
     await message.bot.edit_forum_topic(
         chat_id=group_id,
         message_thread_id=ticket.message_thread_id,
-        icon_custom_emoji_id=SUPPORT_TICKET_CLOSED_EMOJI_ID,
+        icon_custom_emoji_id=texts.SUPPORT_TICKET_CLOSED_EMOJI_ID,
     )
 
     key = StorageKey(message.bot.id, ticket.chat_id, ticket.chat_id)

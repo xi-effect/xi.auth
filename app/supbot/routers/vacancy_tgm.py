@@ -4,10 +4,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup
 
+from app.supbot import texts
+from app.supbot.utils.aiogram_ext import MessageExt, MessageFromUser
+from app.supbot.utils.filters import command_filter
 from app.users.routes.forms_rst import VacancyFormSchema, apply_for_vacancy
-from supbot import texts
-from supbot.aiogram_extension import MessageExt, MessageFromUser
-from supbot.filters import command_filter
 
 router = Router()
 

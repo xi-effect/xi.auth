@@ -14,11 +14,13 @@ from app.common.config import (
     SUPBOT_WEBHOOK_URL,
     TESTING_MODE,
 )
-from supbot.main import telegram_app
-from supbot.texts import BOT_COMMANDS
+from app.supbot.texts import BOT_COMMANDS
+from app.supbot.utils.aiogram_ext import TelegramApp
 
 
-async def run_telegram_polling(polling_timeout: int = 30) -> None:
+async def run_telegram_polling(
+    telegram_app: TelegramApp, polling_timeout: int = 30
+) -> None:
     api_client = AsyncClient(base_url=f"{SUPBOT_WEBHOOK_URL}/api/telegram")
 
     # Partially copied from a protected function:
@@ -33,7 +35,7 @@ async def run_telegram_polling(polling_timeout: int = 30) -> None:
             get_updates.offset = update.update_id + 1
 
 
-async def maybe_initialize_telegram_app() -> None:
+async def maybe_initialize_telegram_app(telegram_app: TelegramApp) -> None:
     if (
         not TESTING_MODE
         and SUPBOT_TOKEN is not None
@@ -49,6 +51,6 @@ async def maybe_initialize_telegram_app() -> None:
         )
         await telegram_app.bot.set_my_commands(BOT_COMMANDS)
         if SUPBOT_POLLING:
-            create_task(run_telegram_polling())
+            create_task(run_telegram_polling(telegram_app))
     elif PRODUCTION_MODE:
         logging.warning("Configuration for supbot is missing")

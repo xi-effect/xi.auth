@@ -4,9 +4,9 @@ from aiogram import F
 from aiogram.filters import Command, Filter, or_f
 from aiogram.fsm.context import FSMContext
 
-from supbot.aiogram_extension import MessageExt
-from supbot.models.support_db import SupportTicket
-from supbot.texts import COMMAND_DESCRIPTIONS
+from app.supbot import texts
+from app.supbot.models.support_db import SupportTicket
+from app.supbot.utils.aiogram_ext import MessageExt
 
 
 class SupportTicketFilter(Filter):
@@ -33,5 +33,5 @@ class SupportTicketFilter(Filter):
 def command_filter(command: str) -> Filter:
     return or_f(
         Command(command),
-        F.text == COMMAND_DESCRIPTIONS[f"/{command}"],
+        F.text == texts.COMMAND_DESCRIPTIONS[f"/{command}"],
     )

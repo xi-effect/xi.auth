@@ -16,7 +16,6 @@ from app.users.routes import (
     reglog_rst,
     sessions_mub,
     sessions_rst,
-    supbot_rst,
     users_mub,
     users_rst,
 )
@@ -26,7 +25,6 @@ from app.users.utils.mub import MUBProtection
 outside_router = APIRouterExt(prefix="/api")
 outside_router.include_router(reglog_rst.router)
 outside_router.include_router(forms_rst.router)
-outside_router.include_router(supbot_rst.router, prefix="/telegram")
 outside_router.include_router(
     email_confirmation_rst.router, prefix="/email-confirmation"
 )

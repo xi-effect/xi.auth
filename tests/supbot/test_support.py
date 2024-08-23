@@ -9,9 +9,9 @@ from aiogram.types import Chat, ChatMemberBanned, ChatMemberMember
 from aiogram.types.forum_topic import ForumTopic
 from faker import Faker
 
-from supbot import texts
-from supbot.models.support_db import SupportTicket
-from supbot.routers.support_tgm import Support
+from app.supbot import texts
+from app.supbot.models.support_db import SupportTicket
+from app.supbot.routers.support_tgm import Support
 from tests.mock_stack import MockStack
 from tests.supbot.conftest import (
     EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,

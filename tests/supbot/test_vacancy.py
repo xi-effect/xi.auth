@@ -8,9 +8,9 @@ from aiogram.types import Chat, InputMediaDocument, InputMediaPhoto, InputMediaV
 from faker import Faker
 from pydantic_marshals.contains import assert_contains
 
+from app.supbot import texts
+from app.supbot.routers.vacancy_tgm import VacancyStates
 from app.users.routes.forms_rst import VacancyFormSchema
-from supbot import texts
-from supbot.routers.vacancy_tgm import VacancyStates
 from tests.mock_stack import MockStack
 from tests.supbot.conftest import (
     EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
@@ -359,7 +359,7 @@ async def test_sending_comment(
     is_comment_provided: str,
 ) -> None:
     vacancy_endpoint_mock = mock_stack.enter_async_mock(
-        "supbot.routers.vacancy_tgm.apply_for_vacancy"
+        "app.supbot.routers.vacancy_tgm.apply_for_vacancy"
     )
     data: dict[str, Any] = {
         "name": faker.name(),
