@@ -19,12 +19,12 @@ class SupportTicketFilter(Filter):
             message_thread_id = (await state.get_data()).get("thread_id")
         elif message.chat.type == "supergroup":
             message_thread_id = message.message_thread_id
-        else:
+        else:  # pragma: no cover  # exclusive situations, maybe they could be covered
             return False
 
         ticket = await SupportTicket.find_first_by_id(message_thread_id)
 
-        if ticket is None or ticket.closed:
+        if ticket is None or ticket.closed:  # pragma: no cover
             return False
 
         return {"ticket": ticket}

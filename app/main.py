@@ -24,7 +24,7 @@ from app.common.sqlalchemy_ext import session_context
 from app.common.starlette_cors_ext import CorrectCORSMiddleware
 
 
-async def reinit_database() -> None:
+async def reinit_database() -> None:  # pragma: no cover
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

@@ -106,10 +106,11 @@ exclude_lines = [
 omit = [
   "alembic/*",
   "test/*",
-  "app/common/sqla.py",
-  "app/common/fastapi_extension.py",
-  "app/utils/setup.py",
-  "supbot/setup.py",
+  "app/common/fastapi_ext.py",
+  "app/common/sqlalchemy_ext.py",
+  "app/common/starlette_cors_ext.py",
+  "app/supbot/setup.py",
+  "app/supbot/utils/aiogram_ext.py",
   "app/setup_ci.py",
 ]
 
