@@ -6,7 +6,6 @@ from faker import Faker
 from fastapi.testclient import TestClient
 
 from app.common.config import COOKIE_DOMAIN, MUB_KEY
-from app.main import app
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
 from app.users.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
@@ -15,11 +14,12 @@ from tests.common.types import Factory, PytestRequest
 
 
 @pytest.fixture(scope="session")
-def mub_client() -> Iterator[TestClient]:
-    with TestClient(
-        app, base_url=f"http://{COOKIE_DOMAIN}", headers={"X-MUB-Secret": MUB_KEY}
-    ) as client:
-        yield client
+def mub_client(client: TestClient) -> TestClient:
+    return TestClient(
+        client.app,
+        base_url=f"http://{COOKIE_DOMAIN}",
+        headers={"X-MUB-Secret": MUB_KEY},
+    )
 
 
 @pytest.fixture()
@@ -108,9 +108,8 @@ def use_cookie_auth(request: PytestRequest[bool]) -> bool:
 
 
 @pytest.fixture(scope="session")
-def authorized_client_base() -> Iterator[TestClient]:
-    with TestClient(app, base_url=f"http://{COOKIE_DOMAIN}") as client:
-        yield client
+def authorized_client_base(client: TestClient) -> TestClient:
+    return TestClient(client.app, base_url=f"http://{COOKIE_DOMAIN}")
 
 
 @pytest.fixture()
@@ -146,9 +145,8 @@ def other_session_token(other_session: Session) -> str:
 
 
 @pytest.fixture(scope="session")
-def other_client_base() -> Iterator[TestClient]:
-    with TestClient(app, base_url=f"http://{COOKIE_DOMAIN}") as client:
-        yield client
+def other_client_base(client: TestClient) -> TestClient:
+    return TestClient(client.app, base_url=f"http://{COOKIE_DOMAIN}")
 
 
 @pytest.fixture()
