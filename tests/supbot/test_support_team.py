@@ -5,8 +5,8 @@ from aiogram.methods.set_message_reaction import SetMessageReaction
 from aiogram.types import Chat
 from aiogram.types.forum_topic_closed import ForumTopicClosed
 
-from supbot import texts
-from supbot.models.support_db import SupportTicket
+from app.supbot import texts
+from app.supbot.models.support_db import SupportTicket
 from tests.supbot.conftest import (
     EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
     MockedBot,

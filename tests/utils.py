@@ -1,76 +1,13 @@
 from http.cookiejar import Cookie
-from typing import Generic, TypeVar
 
 import pytest
 from httpx import Response
-from pydantic_marshals.contains import TypeChecker, assert_contains
+from pydantic_marshals.contains import assert_contains
 
 from app.common.config import COOKIE_DOMAIN
-from app.models.sessions_db import Session
-from app.models.users_db import User
-from app.utils.authorization import AUTH_COOKIE_NAME
-
-
-def assert_nodata_response(
-    response: Response,
-    *,
-    expected_code: int = 204,
-    expected_headers: dict[str, TypeChecker] | None = None,
-    expected_cookies: dict[str, TypeChecker] | None = None,
-) -> Response:
-    assert_contains(
-        {
-            "status_code": response.status_code,
-            "headers": response.headers,
-            "cookies": response.cookies,
-        },
-        {
-            "status_code": expected_code,
-            "headers": expected_headers or {},
-            "cookies": expected_cookies or {},
-        },
-    )
-    return response
-
-
-def assert_response(
-    response: Response,
-    *,
-    expected_code: int = 200,
-    expected_json: TypeChecker,
-    expected_headers: dict[str, TypeChecker] | None = None,
-    expected_cookies: dict[str, TypeChecker] | None = None,
-) -> Response:
-    expected_headers = expected_headers or {}
-    expected_headers["Content-Type"] = "application/json"
-    assert_contains(
-        {
-            "status_code": response.status_code,
-            "json_data": (
-                response.json()
-                if response.headers.get("Content-Type") == "application/json"
-                else None
-            ),
-            "headers": response.headers,
-            "cookies": response.cookies,
-        },
-        {
-            "status_code": expected_code,
-            "json_data": expected_json,
-            "headers": expected_headers,
-            "cookies": expected_cookies or {},
-        },
-    )
-    return response
-
-
-T = TypeVar("T")
-
-
-class PytestRequest(Generic[T]):
-    @property
-    def param(self) -> T:
-        raise NotImplementedError
+from app.users.models.sessions_db import Session
+from app.users.models.users_db import User
+from app.users.utils.authorization import AUTH_COOKIE_NAME
 
 
 async def get_db_user(user: User) -> User:

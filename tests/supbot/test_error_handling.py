@@ -3,8 +3,8 @@ import logging
 import pytest
 from aiogram.types import ErrorEvent
 
-from supbot.routers.error_handling_tgm import error_handler
-from tests.mock_stack import MockStack
+from app.supbot.routers.error_handling_tgm import error_handler
+from tests.common.mock_stack import MockStack
 from tests.supbot.factories import UpdateFactory
 
 
