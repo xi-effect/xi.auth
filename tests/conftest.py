@@ -29,7 +29,7 @@ async def _reset_database(active_session: ActiveSession) -> AsyncIterator[None]:
         await session.execute(delete(User))
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 def client() -> Iterator[TestClient]:
     with TestClient(app, base_url=f"http://{COOKIE_DOMAIN}") as client:
         yield client
