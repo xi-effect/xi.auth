@@ -34,7 +34,10 @@ VACANCY_EPILOGUE_KEYBOARD_MARKUP = {
 }
 CHOOSE_VACANCY_KEYBOARD_MARKUP = {
     "keyboard": [
-        *[[{"text": VACANCY}] for VACANCY in texts.SPECIALIZATIONS],
+        *[
+            [{"text": specialization} for specialization in specialization_row]
+            for specialization_row in texts.SPECIALIZATION_ROWS
+        ],
         [{"text": texts.BACK_BUTTON_TEXT}, {"text": texts.MAIN_MENU_BUTTON_TEXT}],
     ],
 }

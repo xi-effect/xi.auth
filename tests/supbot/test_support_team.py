@@ -88,7 +88,7 @@ async def test_closing_ticket_by_support(
         SendMessage,
         {
             "chat_id": tg_chat_id,
-            "text": texts.CLOSE_TICKET_BY_SUPPORT_MESSAGE,
+            "text": texts.TICKET_CLOSED_BY_SUPPORT_MESSAGE,
             "reply_markup": EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
         },
     )

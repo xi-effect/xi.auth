@@ -40,7 +40,7 @@ async def close_ticket_by_support(
 ) -> None:
     await message.bot.send_message(
         chat_id=ticket.chat_id,
-        text=texts.CLOSE_TICKET_BY_SUPPORT_MESSAGE,
+        text=texts.TICKET_CLOSED_BY_SUPPORT_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
             keyboard=texts.MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
         ),

@@ -2,7 +2,7 @@ from aiogram.types import BotCommand, KeyboardButton
 
 COMMAND_DESCRIPTIONS = {
     "/support": "Обращение в поддержку",
-    "/vacancy": "Наши вакансии",
+    "/vacancy": "Посмотреть вакансии",
 }
 
 BOT_COMMANDS: list[BotCommand] = [
@@ -27,30 +27,27 @@ SUPPORT_TICKED_OPENED_EMOJI_ID = "5312241539987020022"  # 🔥
 SUPPORT_ANSWER_DELIVERED_EMOJI = "⚡"
 CLOSE_SUPPORT_BUTTON_TEXT = "❌ Закрыть обращение"
 START_SUPPORT_MESSAGE = """
-Пожалуйста, опишите вашу проблему
+Пожалуйста, опишите проблему
 """
 WAIT_SUPPORT_MESSAGE = """
-Ваше обращение направлено в поддержку
-Все следующие сообщения мы также получим
-Совсем скоро с вами свяжутся
-Ожидайте...
+Мы получили обращение и ответим в течение 48 часов. Чтобы дополнить обращение, напишите в этот чат
 """
-SUPPORT_TOPIC_NAME = "Обращение от "
-CANCEL_SUPPORT_MESSAGE = """
-Ваше обращение успешно закрыто
+SUPPORT_TOPIC_NAME_TEMPLATE = "{username}: обращение"
+CLOSE_TICKET_CONFIRMATION_MESSAGE = """
+Обращение закрыто
 """
-CLOSE_SUPPORT_BY_USER_MESSAGE = """
+TICKET_CLOSED_BY_USER_MESSAGE = """
 Обращение закрыто пользователем
 """
-CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE = """
-Пользователь заблокировал бота. Тикет закрыт автоматически.
+TICKET_CLOSED_AFTER_USER_BANNED_BOT_MESSAGE = """
+Пользователь заблокировал бота. Тикет закрыт автоматически
 """
-CLOSE_TICKET_BY_SUPPORT_MESSAGE = """
-Ваше обращение закрыто сотрудником тех. поддержки
+TICKET_CLOSED_BY_SUPPORT_MESSAGE = """
+Ваше обращение закрыто сотрудником техподдержки
 """
 
 
-TELEGRAM_BASE_URL = "https://www.t.me"
+TELEGRAM_BASE_URL = "https://t.me"
 
 BACK_BUTTON_TEXT = "Назад"
 SKIP_BUTTON_TEXT = "Пропустить"
@@ -58,17 +55,17 @@ SKIP_BUTTON_TEXT = "Пропустить"
 # Vacancy Form Start
 VACANCIES_WEBSITE_URL = "https://vacancy.xieffect.ru/vacancy"
 STARTING_VACANCY_FORM_MESSAGE = f"""
-Вы можете выбрать интересующую вакансию
-через бота или по ссылке {VACANCIES_WEBSITE_URL}
+Наши вакансии размещены на сайте: {VACANCIES_WEBSITE_URL}
+Вы можете отправить отклик там же или через бота
 """
-CHOOSE_VACANCY_MESSAGE = "Выберите вакансию или введите свою"
-SEND_NAME_MESSAGE = "Как к вам можно обращаться?"
-SEND_TELEGRAM_MESSAGE = "Ваш телеграм для обратной связи"
-SEND_RESUME_MESSAGE = "Ссылка на ваше резюме"
-SEND_INFO_MESSAGE = "Почти готово. Можете оставить для нас сообщение :)"
-VACANCY_FORM_FINAL_MESSAGE = "Спасибо! Мы обязательно рассмотрим ваш отклик и ответим."
+CHOOSE_VACANCY_MESSAGE = "Выберите вакансию или введите свою:"
+SEND_NAME_MESSAGE = "Как вас зовут?"
+SEND_TELEGRAM_MESSAGE = "Пожалуйста, оставьте ваш телеграм ⬇️"
+SEND_RESUME_MESSAGE = "Добавьте ссылку на резюме ⬇️"
+SEND_INFO_MESSAGE = "Почти готово. Можете оставить для нас сообщение 🙂"
+VACANCY_FORM_FINAL_MESSAGE = "Спасибо! Мы получили ваш отклик и рассмотрим его"
 VACANCY_INVALID_INPUT_TYPE_MESSAGE = """
-Пожалуйста, используйте только текстовые сообщения или кнопки для заполнения формы вакансии.
+Пожалуйста, используйте только текстовые сообщения или кнопки для заполнения формы вакансии
 """
 
 CONTINUE_IN_BOT_KEYBOARD_TEXT = "Продолжить через бота"
@@ -88,20 +85,22 @@ NAVIGATION_KEYBOARD_MARKUP_WITH_SKIP: list[list[KeyboardButton]] = [
     *NAVIGATION_KEYBOARD_MARKUP,
 ]
 
-SPECIALIZATIONS: list[str] = [
-    "Frontend разработчик",
-    "Backend разработчик",
-    "Графический дизайнер",
-    "Product manager",
-    "SMM-специалист",
-    # TODO add QAs
+SPECIALIZATION_ROWS: list[list[str]] = [
+    ["Frontend разработчик", "Backend разработчик"],
+    ["QA Engineer (Тестировщик)", "Automation QA (Автотестер)"],
+    ["Графический дизайнер", "Product manager"],
+    ["SMM-специалист", "Marketing-специалист"],
+    ["Копирайтер/Редактор"],
 ]
 CHOOSE_SPECIALIZATION_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
-    *[[KeyboardButton(text=SPECIALIZATION)] for SPECIALIZATION in SPECIALIZATIONS],
+    *[
+        [KeyboardButton(text=specialization) for specialization in specialization_row]
+        for specialization_row in SPECIALIZATION_ROWS
+    ],
     *NAVIGATION_KEYBOARD_MARKUP,
 ]
 
-LEAVE_CURRENT_ACCOUNT_BUTTON_TEXT = "Оставить свой текущий аккаунт"
+LEAVE_CURRENT_ACCOUNT_BUTTON_TEXT = "Оставить для связи текущий аккаунт"
 SEND_TELEGRAM_KEYBOARD_MARKUP: list[list[KeyboardButton]] = [
     [KeyboardButton(text=LEAVE_CURRENT_ACCOUNT_BUTTON_TEXT)],
     *NAVIGATION_KEYBOARD_MARKUP,

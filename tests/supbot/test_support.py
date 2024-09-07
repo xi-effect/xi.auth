@@ -120,16 +120,21 @@ async def test_creating_support_ticket(
 
     await bot_storage.set_state(bot_storage_key, Support.start)
 
+    username: str = faker.user_name()
     webhook_updater(
         UpdateFactory.build(
             message=MessageFactory.build(
-                chat=Chat(id=tg_chat_id, type="private"),
+                chat=Chat(id=tg_chat_id, type="private", username=username),
                 from_user=UserFactory.build(id=tg_user_id),
             ),
         ),
     )
 
-    topic_mock.assert_called_once()
+    topic_mock.assert_called_once_with(
+        chat_id=supbot_group_id,
+        name=texts.SUPPORT_TOPIC_NAME_TEMPLATE.format(username=username),
+        icon_custom_emoji_id=texts.SUPPORT_TICKED_OPENED_EMOJI_ID,
+    )
 
     assert await bot_storage.get_state(bot_storage_key) == Support.conversation
 
@@ -237,7 +242,7 @@ async def test_closing_support_ticket_by_user(
         SendMessage,
         {
             "chat_id": supbot_group_id,
-            "text": texts.CLOSE_SUPPORT_BY_USER_MESSAGE,
+            "text": texts.TICKET_CLOSED_BY_USER_MESSAGE,
             "message_thread_id": support_ticket.message_thread_id,
         },
     )
@@ -245,7 +250,7 @@ async def test_closing_support_ticket_by_user(
         SendMessage,
         {
             "chat_id": tg_chat_id,
-            "text": texts.CANCEL_SUPPORT_MESSAGE,
+            "text": texts.CLOSE_TICKET_CONFIRMATION_MESSAGE,
             "reply_markup": EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
@@ -307,7 +312,7 @@ async def test_closing_ticket_after_user_banned_bot(
         SendMessage,
         {
             "chat_id": supbot_group_id,
-            "text": texts.CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE,
+            "text": texts.TICKET_CLOSED_AFTER_USER_BANNED_BOT_MESSAGE,
             "message_thread_id": support_ticket.message_thread_id,
         },
     )

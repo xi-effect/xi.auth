@@ -51,7 +51,7 @@ async def create_support_ticket(
 ) -> None:
     topic = await message.bot.create_forum_topic(
         chat_id=group_id,
-        name=f"{texts.SUPPORT_TOPIC_NAME}{message.chat.username}",
+        name=texts.SUPPORT_TOPIC_NAME_TEMPLATE.format(username=message.chat.username),
         icon_custom_emoji_id=texts.SUPPORT_TICKED_OPENED_EMOJI_ID,
     )
     await SupportTicket.create(
@@ -109,11 +109,11 @@ async def close_support_ticket_by_user(
     )
     await message.bot.send_message(
         chat_id=group_id,
-        text=texts.CLOSE_SUPPORT_BY_USER_MESSAGE,
+        text=texts.TICKET_CLOSED_BY_USER_MESSAGE,
         message_thread_id=ticket.message_thread_id,
     )
     await message.answer(
-        text=texts.CANCEL_SUPPORT_MESSAGE,
+        text=texts.CLOSE_TICKET_CONFIRMATION_MESSAGE,
         reply_markup=ReplyKeyboardMarkup(
             keyboard=texts.MAIN_MENU_KEYBOARD_MARKUP, resize_keyboard=True
         ),
@@ -145,7 +145,7 @@ async def close_ticket_after_bot_blocked(
     )
     await event.bot.send_message(
         chat_id=group_id,
-        text=texts.CLOSE_TICKET_AFTER_USER_BANNED_BOT_MESSAGE,
+        text=texts.TICKET_CLOSED_AFTER_USER_BANNED_BOT_MESSAGE,
         message_thread_id=ticket.message_thread_id,
     )
 
