@@ -4,15 +4,19 @@ import pytest
 from aiogram.fsm.state import State
 from aiogram.fsm.storage.base import BaseStorage, StorageKey
 from aiogram.methods import SendMessage
-from aiogram.types import Chat
+from aiogram.types import Chat, InputMediaDocument, InputMediaPhoto, InputMediaVideo
 from faker import Faker
 from pydantic_marshals.contains import assert_contains
 
-from app.routes.forms_rst import VacancyFormSchema
-from supbot import texts
-from supbot.routers.vacancy_tgm import VacancyStates
-from tests.mock_stack import MockStack
-from tests.supbot.conftest import MockedBot, WebhookUpdater
+from app.supbot import texts
+from app.supbot.routers.vacancy_tgm import VacancyStates
+from app.users.routes.forms_rst import VacancyFormSchema
+from tests.common.mock_stack import MockStack
+from tests.supbot.conftest import (
+    EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
+    MockedBot,
+    WebhookUpdater,
+)
 from tests.supbot.factories import MessageFactory, UpdateFactory, UserFactory
 
 NAVIGATION_KEYBOARD_MARKUP = {
@@ -30,7 +34,10 @@ VACANCY_EPILOGUE_KEYBOARD_MARKUP = {
 }
 CHOOSE_VACANCY_KEYBOARD_MARKUP = {
     "keyboard": [
-        *[[{"text": VACANCY}] for VACANCY in texts.SPECIALIZATIONS],
+        *[
+            [{"text": specialization} for specialization in specialization_row]
+            for specialization_row in texts.SPECIALIZATION_ROWS
+        ],
         [{"text": texts.BACK_BUTTON_TEXT}, {"text": texts.MAIN_MENU_BUTTON_TEXT}],
     ],
 }
@@ -46,7 +53,6 @@ SENDING_INFO_KEYBOARD_MARKUP = {
         [{"text": texts.BACK_BUTTON_TEXT}, {"text": texts.MAIN_MENU_BUTTON_TEXT}],
     ],
 }
-KEYBOARD_REMOVAL_MARKUP = {"remove_keyboard": True}
 
 
 @pytest.mark.anyio()
@@ -122,8 +128,8 @@ async def test_exiting_vacancy_form(
         SendMessage,
         {
             "chat_id": tg_chat_id,
-            "text": texts.EXIT_VACANCY_FORM_MESSAGE,
-            "reply_markup": KEYBOARD_REMOVAL_MARKUP,
+            "text": texts.MAIN_MENU_MESSAGE,
+            "reply_markup": EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
     mocked_bot.assert_no_more_api_calls()
@@ -356,7 +362,7 @@ async def test_sending_comment(
     is_comment_provided: str,
 ) -> None:
     vacancy_endpoint_mock = mock_stack.enter_async_mock(
-        "supbot.routers.vacancy_tgm.apply_for_vacancy"
+        "app.supbot.routers.vacancy_tgm.apply_for_vacancy"
     )
     data: dict[str, Any] = {
         "name": faker.name(),
@@ -386,7 +392,7 @@ async def test_sending_comment(
         {
             "chat_id": tg_chat_id,
             "text": texts.VACANCY_FORM_FINAL_MESSAGE,
-            "reply_markup": KEYBOARD_REMOVAL_MARKUP,
+            "reply_markup": EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
         },
     )
     mocked_bot.assert_no_more_api_calls()
@@ -459,5 +465,57 @@ async def test_going_back(
             "text": expected_message,
             "reply_markup": expected_keyboard,
         },
+    )
+    mocked_bot.assert_no_more_api_calls()
+
+
+@pytest.mark.anyio()
+@pytest.mark.parametrize(
+    "current_state",
+    [
+        pytest.param(VacancyStates.starting_form, id="starting_form"),
+        pytest.param(VacancyStates.sending_specialization, id="sending_specialization"),
+        pytest.param(VacancyStates.sending_name, id="sending_name"),
+        pytest.param(VacancyStates.sending_telegram, id="sending_telegram"),
+        pytest.param(VacancyStates.sending_resume, id="sending_resume"),
+        pytest.param(VacancyStates.sending_comment, id="sending_comment"),
+    ],
+)
+@pytest.mark.parametrize(
+    "input_media_cls",
+    [
+        pytest.param(InputMediaDocument, id="document"),
+        pytest.param(InputMediaPhoto, id="photo"),
+        pytest.param(InputMediaVideo, id="video"),
+    ],
+)
+async def test_handling_unsupported_message(
+    faker: Faker,
+    webhook_updater: WebhookUpdater,
+    mocked_bot: MockedBot,
+    bot_storage: BaseStorage,
+    bot_storage_key: StorageKey,
+    tg_chat_id: int,
+    tg_user_id: int,
+    current_state: State,
+    input_media_cls: type[InputMediaDocument | InputMediaPhoto | InputMediaVideo],
+) -> None:
+    await bot_storage.set_state(bot_storage_key, current_state)
+
+    webhook_updater(
+        UpdateFactory.build(
+            message=MessageFactory.build(
+                media=input_media_cls(media=faker.url()),
+                chat=Chat(id=tg_chat_id, type="private"),
+                from_user=UserFactory.build(id=tg_user_id),
+            )
+        )
+    )
+
+    assert await bot_storage.get_state(bot_storage_key) == current_state
+
+    mocked_bot.assert_next_api_call(
+        SendMessage,
+        {"chat_id": tg_chat_id, "text": texts.VACANCY_INVALID_INPUT_TYPE_MESSAGE},
     )
     mocked_bot.assert_no_more_api_calls()

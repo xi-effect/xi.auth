@@ -12,12 +12,13 @@ from aiogram.types import Update
 from pydantic_marshals.contains import TypeChecker, assert_contains
 from starlette.testclient import TestClient
 
-from supbot.aiogram_extension import TelegramApp
-from supbot.main import telegram_app
-from supbot.models.support_db import SupportTicket
-from tests.conftest import ActiveSession
-from tests.mock_stack import MockStack
-from tests.utils import assert_nodata_response
+from app.supbot import texts
+from app.supbot.main import telegram_app
+from app.supbot.models.support_db import SupportTicket
+from app.supbot.utils.aiogram_ext import TelegramApp
+from tests.common.active_session import ActiveSession
+from tests.common.assert_contains_ext import assert_nodata_response
+from tests.common.mock_stack import MockStack
 
 
 class IDProvider:
@@ -41,7 +42,10 @@ class WebhookUpdater(Protocol):
 def webhook_updater(client: TestClient) -> WebhookUpdater:
     def webhook_updater_inner(update: Update) -> None:
         assert_nodata_response(
-            client.post("/api/telegram/updates/", json=update.model_dump(mode="json"))
+            client.post(
+                "/api/telegram/updates/",
+                json=update.model_dump(mode="json", exclude_unset=True),
+            )
         )
 
     return webhook_updater_inner
@@ -184,3 +188,9 @@ async def support_ticket(
         return await SupportTicket.create(
             message_thread_id=message_thread_id, chat_id=tg_chat_id
         )
+
+
+EXPECTED_MAIN_MENU_KEYBOARD_MARKUP = {
+    "keyboard": [[{"text": command.description} for command in texts.BOT_COMMANDS]],
+    "resize_keyboard": True,
+}
