@@ -4,14 +4,14 @@ from pydantic import BaseModel
 from starlette.status import HTTP_409_CONFLICT
 
 from app.common.fastapi_ext import APIRouterExt, Responses
-from app.users.models.users_db import OnboardingStage
+from app.users.models.users_db import OnboardingStage, User
 from app.users.utils.authorization import AuthorizedUser
 
 router = APIRouterExt(tags=["onboarding"])
 
 
 class CommunityChoiceModel(BaseModel):
-    display_name: str
+    display_name: User.DisplayNameRequiredType
 
 
 class OnboardingResponses(Responses):
