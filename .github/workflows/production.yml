@@ -38,8 +38,8 @@ jobs:
             docker pull ${{ env.pull_image }}
             docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
             docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
-            docker compose up -d
-            docker image prune -f
+            docker compose up auth-migrate
+            docker compose up -d auth
           script_stop: true
 
       - name: Report status to discord

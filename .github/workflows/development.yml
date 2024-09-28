@@ -79,9 +79,9 @@ jobs:
             docker pull ${{ env.pull_image }}
             docker tag ${{ env.pull_image }} ${{ env.deploy_image }}
             ${{ needs.namer.outputs.branch != 'staging' }} || docker tag ${{ env.pull_image }} ${{ env.deploy_image }}-backup
-            docker compose --profile stage up -d ${{ secrets.DEPLOY_TAG }}
-            ${{ needs.namer.outputs.branch != 'staging' }} || docker compose --profile stage exec auth-stage alembic heads | cut -d ' ' --fields=1 > auth-stage-version.txt
-            docker image prune -f
+            docker compose up auth-stage-migrate
+            docker compose up -d auth-stage
+            ${{ needs.namer.outputs.branch != 'staging' }} || docker compose exec auth-stage alembic heads | cut -d ' ' --fields=1 > auth-stage-version.txt
           script_stop: true
 
       - name: Report status to discord
