@@ -34,10 +34,10 @@ jobs:
           passphrase: ${{ secrets.SSH_KEY_PASSWORD }}
           script: |-
             cd ~/xieffect-core
-            docker compose --profile stage stop auth-stage
-            docker compose --profile stage run --rm --entrypoint alembic auth-stage downgrade $(cat auth-stage-version.txt)
+            docker compose stop auth-stage
+            docker compose run --rm --entrypoint alembic auth-stage-migrate downgrade $(cat auth-stage-version.txt)
             docker image tag ${{ env.deploy_image }}-backup ${{ env.deploy_image }}
-            docker compose --profile stage up -d
+            docker compose up -d auth-stage
           script_stop: true
 
       - name: Report status to discord
