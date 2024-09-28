@@ -52,7 +52,7 @@ class EmailChangeModel(User.PasswordModel):
     new_email: Annotated[str, Field(max_length=100)]
 
 
-@include_responses(PasswordProtectedResponses, UserEmailResponses)
+@include_responses(PasswordProtectedResponses, UserEmailResponses, EmailResendResponses)
 class EmailChangeResponses(Responses):
     pass
 

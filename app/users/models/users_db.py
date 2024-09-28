@@ -56,11 +56,12 @@ class User(Base):
     PasswordType = Annotated[
         str, Field(min_length=6, max_length=100), AfterValidator(generate_hash)
     ]
-    DisplayNameType = Annotated[
-        str | None,
+    DisplayNameRequiredType = Annotated[
+        str,
         StringConstraints(strip_whitespace=True),
         Field(min_length=2, max_length=30),
     ]
+    DisplayNameType = DisplayNameRequiredType | None
     UsernameType = Annotated[str, Field(pattern="^[a-z0-9_.]{4,30}$")]
 
     EmailModel = MappedModel.create(
