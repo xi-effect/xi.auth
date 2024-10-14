@@ -10,7 +10,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
-from app import supbot, users
+from app import pochta, supbot, users
 from app.common.config import (
     DATABASE_MIGRATED,
     MQ_URL,
@@ -18,6 +18,7 @@ from app.common.config import (
     Base,
     engine,
     pochta_producer,
+    redis_pool,
     sessionmaker,
 )
 from app.common.sqlalchemy_ext import session_context
@@ -47,10 +48,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     async with AsyncExitStack() as stack:
         await stack.enter_async_context(users.lifespan())
         await stack.enter_async_context(supbot.lifespan())
-
+        await stack.enter_async_context(pochta.lifespan())
         yield
 
     await rabbit_connection.close()
+    await redis_pool.disconnect()
 
 
 app = FastAPI(
@@ -86,6 +88,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(pochta.api_router)
 app.include_router(users.api_router)
 app.include_router(supbot.api_router)
 

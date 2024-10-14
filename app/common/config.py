@@ -5,6 +5,7 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
+from redis.asyncio import ConnectionPool
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -30,6 +31,9 @@ DATABASE_MIGRATED: bool = getenv("DATABASE_MIGRATED", "0") == "1"
 
 DB_URL: str = getenv("DB_LINK", "postgresql+psycopg://test:test@localhost:5432/test")
 DB_SCHEMA: str | None = getenv("DB_SCHEMA", None)
+
+REDIS_URL: str = getenv("REDIS_URL", "redis://localhost:6379")
+REDIS_POCHTA_STREAM: str = getenv("REDIS_POCHTA_STREAM", "pochta:send")
 
 MQ_URL: str = getenv("MQ_URL", "amqp://guest:guest@localhost/")
 MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
@@ -76,6 +80,10 @@ class Base(AsyncAttrs, DeclarativeBase, MappingBase):
 
     metadata = db_meta
 
+
+redis_pool = ConnectionPool.from_url(
+    REDIS_URL, decode_responses=True, max_connections=20
+)
 
 pochta_producer = RabbitDirectProducer(queue_name=MQ_POCHTA_QUEUE)
 

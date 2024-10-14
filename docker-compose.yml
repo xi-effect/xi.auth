@@ -1,4 +1,15 @@
 services:
+  redis:
+    image: redis:7.4.0-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      start_period: 60s
+      interval: 10s
+      timeout: 60s
+      retries: 5
+
   mq:
     image: rabbitmq:3.12.10-management-alpine
     volumes:
@@ -62,6 +73,8 @@ services:
     profiles:
       - app
     depends_on:
+      redis:
+        condition: service_healthy
       mq:
         condition: service_healthy
       db:
@@ -80,6 +93,7 @@ services:
     environment:
       WATCHFILES_FORCE_POLLING: true
       DB_LINK: postgresql+psycopg://test:test@db:5432/test
+      REDIS_URL: redis://redis:6379
       MQ_URL: amqp://guest:guest@mq
       DB_SCHEMA: xi_auth
       # DATABASE_MIGRATED: "1"
