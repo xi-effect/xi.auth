@@ -5,21 +5,12 @@ import pytest
 from faker import Faker
 from fastapi.testclient import TestClient
 
-from app.common.config import COOKIE_DOMAIN, MUB_KEY
+from app.common.config import COOKIE_DOMAIN
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
 from app.users.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
 from tests.common.active_session import ActiveSession
 from tests.common.types import Factory, PytestRequest
-
-
-@pytest.fixture(scope="session")
-def mub_client(client: TestClient) -> TestClient:
-    return TestClient(
-        client.app,
-        base_url=f"http://{COOKIE_DOMAIN}",
-        headers={"X-MUB-Secret": MUB_KEY},
-    )
 
 
 @pytest.fixture()
