@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.common.config import DEMO_WEBHOOK_URL, VACANCY_WEBHOOK_URL
 from app.common.fastapi_ext import APIRouterExt
+from app.common.schemas.vacancy_form_sch import VacancyFormSchema
 
 router = APIRouterExt(tags=["forms"])
 
@@ -36,14 +37,6 @@ async def apply_for_demonstration(demo_form: DemoFormSchema) -> None:
             + demo_form.contacts
         ),
     )
-
-
-class VacancyFormSchema(BaseModel):
-    name: str
-    telegram: str
-    position: str
-    link: str
-    message: str | None = None
 
 
 @router.post("/vacancy-applications/", status_code=204, summary="Apply for a vacancy")

@@ -1,3 +1,4 @@
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -52,7 +53,10 @@ async def test_demo_form_submitting_missing_webhook_url(
 
 @pytest.mark.anyio()
 async def test_vacancy_form_submitting(
-    faker: Faker, mock_stack: MockStack, client: TestClient
+    faker: Faker,
+    mock_stack: MockStack,
+    client: TestClient,
+    vacancy_form_data: dict[str, Any],
 ) -> None:
     response_mock = Mock()
     response_mock.raise_for_status = Mock()
@@ -64,16 +68,7 @@ async def test_vacancy_form_submitting(
     )
 
     assert_nodata_response(
-        client.post(
-            "/api/vacancy-applications/",
-            json={
-                "position": faker.word(),
-                "name": faker.name(),
-                "telegram": faker.word(),
-                "link": faker.hostname(),
-                "message": faker.sentence(),
-            },
-        )
+        client.post("/api/vacancy-applications/", json=vacancy_form_data)
     )
     execute_mock.assert_called_once()
     response_mock.raise_for_status.assert_called_once()
@@ -81,19 +76,10 @@ async def test_vacancy_form_submitting(
 
 @pytest.mark.anyio()
 async def test_vacancy_form_submitting_missing_webhook_url(
-    faker: Faker, client: TestClient
+    faker: Faker, client: TestClient, vacancy_form_data: dict[str, Any]
 ) -> None:
     assert_response(
-        client.post(
-            "/api/vacancy-applications/",
-            json={
-                "position": faker.word(),
-                "name": faker.name(),
-                "telegram": faker.word(),
-                "link": faker.hostname(),
-                "message": faker.sentence(),
-            },
-        ),
+        client.post("/api/vacancy-applications/", json=vacancy_form_data),
         expected_code=500,
         expected_json={"detail": "Webhook url is not set"},
     )

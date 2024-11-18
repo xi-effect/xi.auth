@@ -14,6 +14,7 @@ pytest_plugins = (
     "tests.common.active_session",
     "tests.common.faker_ext",
     "tests.common.mock_stack",
+    "tests.common.respx_ext",
 )
 
 
