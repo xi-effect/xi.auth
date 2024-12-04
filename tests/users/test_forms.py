@@ -18,9 +18,7 @@ async def test_demo_form_submitting(
     execute_mock = mock_stack.enter_async_mock(
         AsyncDiscordWebhook, "execute", return_value=response_mock
     )
-    mock_stack.enter_mock(
-        "app.users.routes.forms_rst.DEMO_WEBHOOK_URL", return_value=""
-    )
+    mock_stack.enter_patch("app.users.routes.forms_rst.DEMO_WEBHOOK_URL", new="")
 
     assert_nodata_response(
         client.post(

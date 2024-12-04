@@ -80,15 +80,18 @@ class MockStack(ExitStack):
         return self.enter_context(patch.object(target, attribute, mock))
 
     @overload
-    def enter_patch(self, target: Any, attribute: str, /) -> Mock: ...
+    def enter_patch(self, target: str, /, *, new: Any) -> None: ...
 
     @overload
-    def enter_patch(self, target: str, /) -> Mock: ...
+    def enter_patch(self, target: Any, attribute: str, /, *, new: Any) -> None: ...
 
-    def enter_patch(self, target: Any, attribute: str | None = None) -> Mock:
+    def enter_patch(
+        self, target: Any, attribute: str | None = None, *, new: Any
+    ) -> None:
         if attribute is None:
-            return self.enter_context(patch(target))
-        return self.enter_context(patch.object(target, attribute))
+            self.enter_context(patch(target, new=new))
+        else:
+            self.enter_context(patch.object(target, attribute, new=new))
 
 
 @pytest.fixture()
