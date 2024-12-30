@@ -75,6 +75,10 @@ smtp_client: SMTP | None = (
     else None
 )
 
+LOCAL_PORT: str = getenv("LOCAL_PORT", "8000")
+
+BRIDGE_BASE_URL: str = getenv("BRIDGE_BASE_URL", f"http://localhost:{LOCAL_PORT}")
+
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323
     "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323

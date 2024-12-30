@@ -7,11 +7,11 @@ from aiogram.methods import SendMessage
 from aiogram.types import Chat, InputMediaDocument, InputMediaPhoto, InputMediaVideo
 from faker import Faker
 from pydantic_marshals.contains import assert_contains
+from respx import MockRouter
 
 from app.supbot import texts
 from app.supbot.routers.vacancy_tgm import VacancyStates
-from app.users.routes.forms_rst import VacancyFormSchema
-from tests.common.mock_stack import MockStack
+from tests.common.respx_ext import assert_last_httpx_request
 from tests.supbot.conftest import (
     EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
     MockedBot,
@@ -352,18 +352,19 @@ async def test_sending_resume(
 )
 async def test_sending_comment(
     faker: Faker,
-    mock_stack: MockStack,
+    users_respx_mock: MockRouter,
     webhook_updater: WebhookUpdater,
     mocked_bot: MockedBot,
     bot_storage: BaseStorage,
     bot_storage_key: StorageKey,
     tg_chat_id: int,
     tg_user_id: int,
-    is_comment_provided: str,
+    is_comment_provided: bool,
 ) -> None:
-    vacancy_endpoint_mock = mock_stack.enter_async_mock(
-        "app.supbot.routers.vacancy_tgm.apply_for_vacancy"
-    )
+    public_users_bridge_mock = users_respx_mock.post(
+        path="/api/vacancy-applications/",
+    ).respond(status_code=204)
+
     data: dict[str, Any] = {
         "name": faker.name(),
         "position": faker.sentence(nb_words=2),
@@ -396,7 +397,12 @@ async def test_sending_comment(
         },
     )
     mocked_bot.assert_no_more_api_calls()
-    vacancy_endpoint_mock.assert_called_once_with(VacancyFormSchema(**data))
+
+    assert_last_httpx_request(
+        public_users_bridge_mock,
+        expected_path="/api/vacancy-applications/",
+        expected_json=data,
+    )
 
 
 @pytest.mark.anyio()

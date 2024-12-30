@@ -63,6 +63,7 @@ faker-file = "^0.17.11"
 rstr = "3.2.2"
 watchfiles = "^0.21.0"
 polyfactory = "^2.15.0"
+respx = "^0.21.1"
 
 [tool.isort]
 profile = "black"
