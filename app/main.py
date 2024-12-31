@@ -10,7 +10,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.staticfiles import StaticFiles
 
-from app import supbot, users
+from app import pochta, supbot, users
+from app.common.bridges.config_bdg import public_users_bridge
 from app.common.config import (
     DATABASE_MIGRATED,
     MQ_URL,
@@ -47,6 +48,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     async with AsyncExitStack() as stack:
         await stack.enter_async_context(users.lifespan())
         await stack.enter_async_context(supbot.lifespan())
+        await stack.enter_async_context(pochta.lifespan())
+
+        await stack.enter_async_context(public_users_bridge.client)
 
         yield
 
@@ -88,6 +92,7 @@ app.add_middleware(
 
 app.include_router(users.api_router)
 app.include_router(supbot.api_router)
+app.include_router(pochta.api_router)
 
 
 @app.middleware("http")

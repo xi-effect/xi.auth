@@ -3,6 +3,7 @@ import sys
 from os import getenv
 from pathlib import Path
 
+from aiosmtplib import SMTP
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
 from sqlalchemy import MetaData
@@ -52,6 +53,31 @@ SUPBOT_GROUP_ID: str | None = getenv("SUPBOT_GROUP_ID")
 SUPBOT_CHANNEL_ID: str | None = getenv("SUPBOT_CHANNEL_ID")
 SUPBOT_POLLING: bool = getenv("SUPBOT_POLLING", "0") == "1"
 SUPBOT_WEBHOOK_URL: str = getenv("SUPBOT_WEBHOOK_URL", "http://localhost:5100")
+
+EMAIL_HOSTNAME: str | None = getenv("EMAIL_HOSTNAME")
+EMAIL_USERNAME: str | None = getenv("EMAIL_USERNAME")
+EMAIL_PASSWORD: str | None = getenv("EMAIL_PASSWORD")
+EMAIL_INITIALIZED: bool = all((EMAIL_HOSTNAME, EMAIL_USERNAME, EMAIL_PASSWORD))
+EMAIL_PORT = int(getenv("EMAIL_PORT", 465))
+EMAIL_TIMEOUT = int(getenv("EMAIL_TIMEOUT", 20))
+EMAIL_USE_TLS: bool = getenv("EMAIL_USE_TLS", "1") == "1"
+
+smtp_client: SMTP | None = (
+    SMTP(
+        hostname=EMAIL_HOSTNAME,
+        username=EMAIL_USERNAME,
+        password=EMAIL_PASSWORD,
+        use_tls=EMAIL_USE_TLS,
+        port=EMAIL_PORT,
+        timeout=EMAIL_TIMEOUT,
+    )
+    if EMAIL_INITIALIZED
+    else None
+)
+
+LOCAL_PORT: str = getenv("LOCAL_PORT", "8000")
+
+BRIDGE_BASE_URL: str = getenv("BRIDGE_BASE_URL", f"http://localhost:{LOCAL_PORT}")
 
 convention = {
     "ix": "ix_%(column_0_label)s",  # noqa: WPS323

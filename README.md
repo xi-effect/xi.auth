@@ -62,6 +62,20 @@ SUPBOT_CHANNEL_ID=-100123456
 SUPBOT_WEBHOOK_URL=http://localhost:8000
 ```
 
+### Pochta
+Для локального запуска сервиса можно использовать Gmail:
+1. Заходим в управление аккаунтом Google
+2. Включаем двухэтапную аутентификацию в разделе безопасность (если еще не включена)
+3. Находим в строке поиска "пароли приложений" или "app pass"
+4. Называем как угодно и копируем полученный пароль
+5. Добавляем в .env файл следующего формата:
+
+```txt
+EMAIL_USERNAME=your_email@gmail.com
+EMAIL_PASSWORD=asdf lkjh zxcv qere
+EMAIL_HOSTNAME=smtp.gmail.com
+```
+
 ## Info
 ### Stack
 - Python
