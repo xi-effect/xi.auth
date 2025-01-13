@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends
 
-from app.common.config import AVATARS_PATH
+from app.common.config import settings
 from app.common.fastapi_ext import APIRouterExt
 from app.users.routes import (
     avatar_rst,
@@ -50,5 +50,5 @@ api_router.include_router(proxy_rst.router)
 
 @asynccontextmanager
 async def lifespan() -> AsyncIterator[None]:
-    AVATARS_PATH.mkdir(exist_ok=True)
+    settings.avatars_path.mkdir(exist_ok=True)
     yield

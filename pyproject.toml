@@ -23,14 +23,15 @@ aiogram = "^3.4.1"
 httpx = "^0.23.0"
 psycopg = {extras = ["binary"], version = "^3.1.19"}
 aiosmtplib = "^3.0.2"
+pydantic-settings = "^2.6.1"
 
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.2.2"
 flake8 = "4.0.1"
-black = "^24.3.0"
+black = "24.10.0"
 pre-commit = "^3.2.1"
-mypy = "^1.1.1"
+mypy = "^1.12.0"
 flake8-pie = "0.16.0"
 dlint = "0.14.0"
 flake8-coding = "1.3.2"
@@ -76,8 +77,14 @@ line_length = 88
 
 [tool.mypy]
 strict = true
+warn_unreachable = true
+warn_redundant_casts = true
+disable_error_code = ["prop-decorator"]  # computed_field
 exclude = ["alembic"]
-plugins = "pydantic_marshals.mypy.plugin"
+plugins = [
+  "pydantic.mypy",
+  "pydantic_marshals.mypy.plugin",
+]
 
 [tool.coverage.run]
 concurrency = ["greenlet", "thread"]
@@ -93,7 +100,8 @@ exclude_lines = [
   "pragma: no cover",
   "if TYPE_CHECKING:",
   "if sys.platform .*:",
-  "if( not)? PRODUCTION_MODE",
+  "if( not)? settings.production_mode",
+  "if settings.postgres_automigrate",
   "except ImportError",
   "raise AssertionError",
   "raise NotImplementedError",

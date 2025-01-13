@@ -6,12 +6,12 @@ import pytest
 from pydantic_marshals.contains import TypeChecker, assert_contains
 from respx import MockRouter, Route, mock
 
-from app.common.config import BRIDGE_BASE_URL
+from app.common.config import settings
 
 
 @pytest.fixture()
 def users_respx_mock() -> Iterator[MockRouter]:
-    mock_router: MockRouter = mock(base_url=BRIDGE_BASE_URL)
+    mock_router: MockRouter = mock(base_url=settings.bridge_base_url)
     with mock_router:
         yield mock_router
 

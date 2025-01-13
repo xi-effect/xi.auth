@@ -4,7 +4,7 @@ import pytest
 from httpx import Response
 from pydantic_marshals.contains import assert_contains
 
-from app.common.config import COOKIE_DOMAIN
+from app.common.config import settings
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
 from app.users.utils.authorization import AUTH_COOKIE_NAME
@@ -55,7 +55,7 @@ async def assert_session_from_cookie(
             "value": str,
             "expired": False,
             "secure": True,
-            "domain": f".{COOKIE_DOMAIN}",
+            "domain": f".{settings.cookie_domain}",
             "path": "/",
             "httponly": True,
             "same_site": "none" if cross_site else "strict",

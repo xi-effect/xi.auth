@@ -8,12 +8,12 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy.sql.ddl import CreateSchema
 
 import app.main  # noqa: F401
-from app.common.config import DB_URL, db_meta
+from app.common.config import db_meta, settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-config.set_main_option("sqlalchemy.url", DB_URL)
+config.set_main_option("sqlalchemy.url", settings.postgres_dsn)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -66,7 +66,8 @@ def do_run_migrations(connection: Connection) -> None:
     )
 
     with context.begin_transaction():
-        context.execute(CreateSchema("xi_auth", if_not_exists=True))
+        if settings.postgres_schema is not None:
+            context.execute(CreateSchema(settings.postgres_schema, if_not_exists=True))
         context.run_migrations()
 
 

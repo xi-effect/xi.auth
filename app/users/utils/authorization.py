@@ -6,7 +6,7 @@ from fastapi.params import Header
 from fastapi.security import APIKeyCookie, APIKeyHeader
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from app.common.config import COOKIE_DOMAIN
+from app.common.config import settings
 from app.common.fastapi_ext import Responses, with_responses
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
@@ -31,7 +31,7 @@ def add_session_to_response(response: Response, session: Session) -> None:
         AUTH_COOKIE_NAME,
         session.token,
         expires=session.expiry.astimezone(timezone.utc),
-        domain=COOKIE_DOMAIN,
+        domain=settings.cookie_domain,
         samesite="none" if session.cross_site else "strict",
         httponly=True,
         secure=True,
@@ -39,7 +39,7 @@ def add_session_to_response(response: Response, session: Session) -> None:
 
 
 def remove_session_from_response(response: Response) -> None:
-    response.delete_cookie(AUTH_COOKIE_NAME, domain=COOKIE_DOMAIN)
+    response.delete_cookie(AUTH_COOKIE_NAME, domain=settings.cookie_domain)
 
 
 class AuthorizedResponses(Responses):

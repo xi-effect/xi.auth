@@ -5,7 +5,7 @@ import pytest
 from fastapi import Response
 from freezegun import freeze_time
 
-from app.common.config import COOKIE_DOMAIN
+from app.common.config import settings
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
 from app.users.utils.authorization import AUTH_COOKIE_NAME, authorize_user
@@ -82,7 +82,7 @@ async def test_automatic_renewal(
         AUTH_COOKIE_NAME,
         session.token,
         expires=session.expiry.astimezone(timezone.utc),
-        domain=COOKIE_DOMAIN,
+        domain=settings.cookie_domain,
         samesite="none" if cross_site else "strict",
         httponly=True,
         secure=True,

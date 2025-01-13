@@ -9,7 +9,7 @@ from pydantic_marshals.sqlalchemy import MappedModel
 from sqlalchemy import CHAR, Enum, Index, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.common.config import AVATARS_PATH, Base, token_generator
+from app.common.config import Base, settings, token_generator
 
 
 class OnboardingStage(str, enum.Enum):
@@ -107,7 +107,7 @@ class User(Base):
 
     @property
     def avatar_path(self) -> Path:
-        return AVATARS_PATH / f"{self.id}.webp"
+        return settings.avatars_path / f"{self.id}.webp"
 
     @property
     def generated_reset_token(self) -> str:  # noqa: FNE002  # reset is a noun here

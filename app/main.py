@@ -12,15 +12,7 @@ from starlette.staticfiles import StaticFiles
 
 from app import pochta, supbot, users
 from app.common.bridges.config_bdg import public_users_bridge
-from app.common.config import (
-    DATABASE_MIGRATED,
-    MQ_URL,
-    PRODUCTION_MODE,
-    Base,
-    engine,
-    pochta_producer,
-    sessionmaker,
-)
+from app.common.config import Base, engine, pochta_producer, sessionmaker, settings
 from app.common.sqlalchemy_ext import session_context
 from app.common.starlette_cors_ext import CorrectCORSMiddleware
 
@@ -33,14 +25,14 @@ async def reinit_database() -> None:  # pragma: no cover
 
 async def connect_rabbit() -> AbstractRobustConnection:
     loop: AbstractEventLoop = get_running_loop()
-    connection = await connect_robust(MQ_URL, loop=loop)
+    connection = await connect_robust(settings.mq_dsn, loop=loop)
     await pochta_producer.connect(connection)
     return connection
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    if not PRODUCTION_MODE and not DATABASE_MIGRATED:
+    if settings.postgres_automigrate:
         await reinit_database()
 
     rabbit_connection = await connect_rabbit()

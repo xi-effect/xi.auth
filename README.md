@@ -4,7 +4,7 @@
 Эта установка нужна для запуска бэкенда локально и запуска форматеров, линтеров и тайп чекеров перед каждым коммитом. Для корректной работы требуется Python 3.11
 
 ```sh
-pip install poetry==1.4.1
+pip install poetry==1.8.2
 poetry install
 pre-commit install
 ```
@@ -44,22 +44,22 @@ docker compose down
 6. Добавить бота в группу (важно сделать это именно после шагов 4-5, иначе нужно выгнать бота и добавить заново)
 7. Если хочется, можно теперь запретить добавлять бота в группы, т.е. отменить шаг 4 (шаг 5 отменять нельзя)
 8. Дальше настраиваем переменные окружения в файле `.env` (не заливать в git!):
-   - `SUPBOT_POLLING` включить polling (поставить значение `"1"`), чтобы не тыкаться с webhook-ом
-   - `SUPBOT_TOKEN` это токен бота, созданного на первом этапе
-   - `SUPBOT_GROUP_ID` это id группы, в которую добавлен бот (id можно получить переслав сообщение из группы [боту](https://t.me/get_id_channel_bot) (начинается с -100))
-   - `SUPBOT_CHANNEL_ID` это id канала, в который добавлен бот (id можно получить переслав сообщение из канала [боту](https://t.me/get_id_channel_bot) (начинается с -100))
+   - `SUPBOT__POLLING` включить polling (поставить значение `"true"`), чтобы не тыкаться с webhook-ом
+   - `SUPBOT__TOKEN` это токен бота, созданного на первом этапе
+   - `SUPBOT__GROUP_ID` это id группы, в которую добавлен бот (id можно получить переслав сообщение из группы [боту](https://t.me/get_id_channel_bot) (начинается с -100))
+   - `SUPBOT__CHANNEL_ID` это id канала, в который добавлен бот (id можно получить переслав сообщение из канала [боту](https://t.me/get_id_channel_bot) (начинается с -100))
 
 Пример `.env`-файла:
 ```txt
-SUPBOT_POLLING=1
-SUPBOT_TOKEN=0000000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-SUPBOT_GROUP_ID=-100123456
-SUPBOT_CHANNEL_ID=-100123456
+SUPBOT__POLLING=true
+SUPBOT__TOKEN=0000000000:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+SUPBOT__GROUP_ID=-100123456
+SUPBOT__CHANNEL_ID=-100123456
 ```
 
-После всех настроек можно запускать приложение, как сказано в [инструкции выше](#run). Важно использовать `--port 5100`, а если хочется использовать иной порт, то его нужно указать в переменной `SUPBOT_WEBHOOK_URL` в `.env`, например, так:
+После всех настроек можно запускать приложение, как сказано в [инструкции выше](#run). Важно использовать `--port 5100`, а если хочется использовать иной порт, то его нужно указать в переменной `SUPBOT__WEBHOOK_URL` в `.env`, например, так:
 ```txt
-SUPBOT_WEBHOOK_URL=http://localhost:8000
+SUPBOT__WEBHOOK_URL=http://localhost:8000
 ```
 
 ### Pochta
@@ -71,9 +71,9 @@ SUPBOT_WEBHOOK_URL=http://localhost:8000
 5. Добавляем в .env файл следующего формата:
 
 ```txt
-EMAIL_USERNAME=your_email@gmail.com
-EMAIL_PASSWORD=asdf lkjh zxcv qere
-EMAIL_HOSTNAME=smtp.gmail.com
+EMAIL__USERNAME=your_email@gmail.com
+EMAIL__PASSWORD=asdf lkjh zxcv qere
+EMAIL__HOSTNAME=smtp.gmail.com
 ```
 
 ## Info

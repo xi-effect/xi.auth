@@ -9,7 +9,7 @@ literal-multiline-quotes = "double"
 literal-docstring-quotes = "double"
 literal-include-name = true
 
-rst-roles = py:class, py:func, py:ref, py:attr
+rst-roles = py:mod, py:func, py:data, py:const, py:class, py:meth, py:attr, py:exc, py:obj, py:ref
 
 extend-exclude =
   alembic
@@ -19,45 +19,63 @@ max-line-length = 88
 
 # ignores
 extend-ignore =
-  # not required or shadowed by other plugins
+  # # not required or shadowed by other plugins
   D I FI TC Q U101 S101 WPS400
-
   # black
-  WPS317 WPS348 E501 C812 C816
+  WPS220 WPS317 WPS348 WPS352 E501 C812 C815 C816 C819 E203
+  # mypy (for __init__)
+  WPS410 WPS412
   # pydantic-marshals & SQLAlchemy
   VNE003 WPS115
-  # weird
-  PIE803 C101 FNE007 FNE008 N812 ANN101 ANN102 WPS110 WPS111 WPS114 WPS407 VNE001 CM001
-  # broken
-  PIE798 WPS226 WPS354 WPS432 WPS473 WPS507
-  U100  # fails to understand `raise NotImplementedError` and overloading
-  WPS338  # bad method ordering conventions
-  # __init__
-  WPS410 WPS412
-  WPS428  # fails to understand overloading
-  WPS465  # fails to understand pipe-unions for types
-  WPS601  # fails to same-name class and instance attributes (pydantic & sqlalchemy)
-  # to many
-  WPS201 WPS202 WPS204 WPS210 WPS214 WPS217 WPS218 WPS220 WPS221 WPS234 WPS235
 
-  # don't block features
-  WPS100  # utils is a module name
-  WPS237 WPS305  # f-strings are the best
-  WPS306  # python 2.x is deprecated
-  WPS347  # vague imports
-  WPS352  # multiline loops
-  WPS402  # noqa exists for a reason
-  WPS420 WPS604  # pass is a thing
-  WPS430  # nested functions
-  WPS451  # positional-only arguments
-  WPS501  # try-finally with no except
-  WPS600  # subclassing lowercase builtins
-  WPS602  # @staticmethod
-  WPS605  # methods with no arguments
+  # # weird
+  PIE803 C101 FNE007 FNE008 N812 ANN101 ANN102 WPS110 WPS111 WPS114 WPS338 WPS407 WPS414 VNE001 VNE002 CM001
+  # too many
+  WPS200 WPS201 WPS202 WPS204 WPS210 WPS211 WPS213 WPS214 WPS217 WPS218 WPS220 WPS221 WPS230 WPS231 WPS234 WPS235 WPS238
 
-  # tastes differ
-  WPS337  # multiline conditions
+  # # broken
+  PIE798 WPS226 WPS354 WPS432 WPS473 WPS507 FNE004
+  # fails to understand `raise NotImplementedError` and overloading
+  U100
+  # fails to understand enums
+  WPS115
+  # fails to understand overloading
+  WPS428
+  # fails to understand pipe-unions
+  WPS465
+  # fails to same-name class and instance attributes (pydantic & sqlalchemy)
+  WPS601
+
+  # # don't block features
+  # utils is a module name
+  WPS100
+  # f-strings are the best
+  WPS237 WPS305
+  # python 2.x is deprecated
+  WPS306
+  # multiline
+  WPS320 WPS337 WPS352
+  # noqa exists for a reason
+  WPS402
+  # pass is a thing
+  WPS420 WPS604
+  # nested functions
+  WPS430
+  # nested classes
+  WPS431
+  # positional-only arguments
+  WPS451
+  # try-finally with no except
+  WPS501
+  # subclassing lowercase builtins
+  WPS600
+  # @staticmethod
+  WPS602
+  # methods with no arguments
+  WPS605
+  # vague imports
+  WPS347
 
 per-file-ignores =
-  *test*: TN101 FNE005 SCS108 VNE001 WPS118 WPS202 WPS211 WPS317 WPS407 WPS425 WPS432 WPS440 WPS437 WPS441 WPS442 WPS507 WPS520 WPS609
+  *test*: TN101 FNE005 SCS108 S311 VNE001 WPS118 WPS202 WPS211 WPS317 WPS407 WPS425 WPS432 WPS437 WPS440 WPS441 WPS442 WPS507 WPS520 WPS609
   alembic/versions/*: WPS102 PEA001 NU001 SIM907

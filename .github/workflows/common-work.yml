@@ -23,9 +23,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      DB_LINK: 'postgresql+psycopg://test:test@localhost:5432/test'
-      DB_SCHEMA: ${{ inputs.database && 'xi_auth' || '' }}
-      MQ_URL: 'amqp://guest:guest@localhost/'
+      postgres_schema: ${{ inputs.database && 'xi_auth' || '' }}
 
     services:
       mq:
@@ -55,9 +53,9 @@ jobs:
           cache: pip
 
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@v1.3.4
         with:
-          version: 1.4.1
+          version: 1.8.2
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
@@ -120,7 +118,7 @@ jobs:
       - name: Run pytest
         run: pytest tests -p no:cacheprovider --cov=app ${{ !inputs.coverage && '--cov-fail-under=0' || ''}}
         env:
-          DATABASE_MIGRATED: '1'
+          postgres_automigrate: false
 
       - name: Run pre-commit for all files
         if: success() || (failure() && steps.venv.conclusion == 'success')
