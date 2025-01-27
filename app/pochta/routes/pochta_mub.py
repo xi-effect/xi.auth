@@ -3,7 +3,7 @@ from typing import Annotated
 
 from fastapi import File, Form, HTTPException, UploadFile
 
-from app.common.config import EMAIL_USERNAME, smtp_client
+from app.common.config import settings, smtp_client
 from app.common.fastapi_ext import APIRouterExt
 
 router = APIRouterExt(tags=["pochta mub"])
@@ -19,13 +19,13 @@ async def send_email_from_file(
     subject: Annotated[str, Form()],
     file: Annotated[UploadFile, File(description="text/html")],
 ) -> None:
-    if smtp_client is None:
+    if smtp_client is None or settings.email is None:
         raise HTTPException(500, "Email config is not set")
 
     message = EmailMessage()
     message["To"] = receiver
     message["Subject"] = subject
-    message["From"] = EMAIL_USERNAME
+    message["From"] = settings.email.username
     message.set_content((await file.read()).decode("utf-8"), subtype="html")
 
     async with smtp_client as smtp:

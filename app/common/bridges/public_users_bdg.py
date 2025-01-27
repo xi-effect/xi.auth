@@ -1,13 +1,13 @@
 from httpx import AsyncClient
 
-from app.common.config import BRIDGE_BASE_URL
+from app.common.config import settings
 from app.common.schemas.vacancy_form_sch import VacancyFormSchema
 
 
 class PublicUsersBridge:
     def __init__(self) -> None:
         self.client = AsyncClient(
-            base_url=BRIDGE_BASE_URL,
+            base_url=settings.bridge_base_url,
         )
 
     async def apply_for_vacancy(self, vacancy_form: VacancyFormSchema) -> None:

@@ -2,7 +2,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from app.common.config import EMAIL_INITIALIZED, PRODUCTION_MODE
+from app.common.config import settings
 from app.common.fastapi_ext import APIRouterExt
 from app.pochta.routes import pochta_mub
 from app.users.utils.mub import MUBProtection
@@ -16,6 +16,6 @@ api_router.include_router(mub_router)
 
 @asynccontextmanager
 async def lifespan() -> AsyncIterator[None]:
-    if PRODUCTION_MODE and not EMAIL_INITIALIZED:
+    if settings.production_mode and settings.email is None:
         logging.warning("Configuration for email service is missing")
     yield

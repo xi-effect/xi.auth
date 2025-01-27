@@ -22,7 +22,9 @@ async def test_demo_form_submitting(
     execute_mock = mock_stack.enter_async_mock(
         AsyncDiscordWebhook, "execute", return_value=response_mock
     )
-    mock_stack.enter_patch("app.users.routes.forms_rst.DEMO_WEBHOOK_URL", new="")
+    mock_stack.enter_patch(
+        "app.users.routes.forms_rst.settings.demo_webhook_url", new=""
+    )
 
     assert_nodata_response(
         client.post(
@@ -67,7 +69,7 @@ async def test_old_vacancy_form_submitting(
         AsyncDiscordWebhook, "execute", return_value=response_mock
     )
     mock_stack.enter_mock(
-        "app.users.routes.forms_rst.VACANCY_WEBHOOK_URL", return_value=""
+        "app.users.routes.forms_rst.settings.vacancy_webhook_url", return_value=""
     )
 
     assert_nodata_response(
@@ -106,7 +108,7 @@ async def test_vacancy_form_submitting(
         AsyncDiscordWebhook, "execute", return_value=response_mock
     )
     mock_stack.enter_mock(
-        "app.users.routes.forms_rst.VACANCY_WEBHOOK_URL", return_value=""
+        "app.users.routes.forms_rst.settings.vacancy_webhook_url", return_value=""
     )
 
     assert_nodata_response(

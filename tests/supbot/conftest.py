@@ -102,9 +102,9 @@ class MockedBot:
     def iter_bot_calls(self) -> Iterable[tuple[Sequence[Any], dict[str, Any]]]:
         for mock_call in self.call_mock.mock_calls:
             if len(mock_call) == 2:
-                yield mock_call  # type: ignore[misc]  # unittest is badly typed
+                yield mock_call
             elif len(mock_call) == 3 and mock_call[0] == "":
-                yield mock_call[1:]  # type: ignore[misc]  # unittest is badly typed
+                yield mock_call[1:]
 
     def iter_api_calls(self) -> Iterable[TelegramMethod[Any]]:
         for args, _ in self.iter_bot_calls():

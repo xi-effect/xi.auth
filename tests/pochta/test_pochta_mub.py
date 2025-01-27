@@ -6,6 +6,7 @@ from faker import Faker
 from pydantic_marshals.contains import assert_contains
 from starlette.testclient import TestClient
 
+from app.common.config import EmailSettings
 from tests.common.assert_contains_ext import assert_nodata_response, assert_response
 from tests.common.mock_stack import MockStack
 
@@ -39,7 +40,12 @@ async def test_sending_email_from_file(
     ).__aenter__.return_value.send_message
     email_username = faker.email()
     mock_stack.enter_patch(
-        "app.pochta.routes.pochta_mub.EMAIL_USERNAME", new=email_username
+        "app.pochta.routes.pochta_mub.settings.email",
+        new=EmailSettings(
+            hostname=faker.domain_name(),
+            username=email_username,
+            password=faker.password(),
+        ),
     )
 
     assert_nodata_response(
