@@ -1,98 +1,155 @@
-import asyncio
 import sys
-from os import getenv
 from pathlib import Path
 
 from aiosmtplib import SMTP
 from cryptography.fernet import Fernet
-from dotenv import load_dotenv
+from pydantic import AmqpDsn, BaseModel, Field, PostgresDsn, computed_field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.common.aiopika_ext import RabbitDirectProducer
 from app.common.cryptography import CryptographyProvider, TokenGenerator
-from app.common.sqlalchemy_ext import MappingBase
+from app.common.sqlalchemy_ext import MappingBase, sqlalchemy_naming_convention
 
-current_directory: Path = Path.cwd()
 
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+class FernetSettings(BaseModel):
+    current_key: str = Field(default_factory=lambda: Fernet.generate_key().decode())
+    backup_key: str | None = None
+    encryption_ttl: int
 
-load_dotenv(current_directory / ".env")
+    @computed_field
+    @property
+    def keys(self) -> list[str]:
+        return (
+            [self.current_key]
+            if self.backup_key is None
+            else [self.current_key, self.backup_key]
+        )
 
-AVATARS_PATH: Path = current_directory / "avatars"
 
-PRODUCTION_MODE: bool = getenv("PRODUCTION", "0") == "1"
-TESTING_MODE: bool = "pytest" in sys.modules
+class EmailSettings(BaseModel):
+    hostname: str
+    username: str
+    password: str
+    port: int = 465
+    timeout: int = 20
+    use_tls: bool = True
 
-COOKIE_DOMAIN: str = getenv("COOKIE_DOMAIN", "localhost")
-DATABASE_MIGRATED: bool = getenv("DATABASE_MIGRATED", "0") == "1"
 
-DB_URL: str = getenv("DB_LINK", "postgresql+psycopg://test:test@localhost:5432/test")
-DB_SCHEMA: str | None = getenv("DB_SCHEMA", None)
+class SupbotSettings(BaseModel):
+    token: str
+    group_id: int
+    channel_id: int
+    polling: bool = False
+    webhook_url: str = "http://localhost:5100"
 
-MQ_URL: str = getenv("MQ_URL", "amqp://guest:guest@localhost/")
-MQ_POCHTA_QUEUE: str = getenv("MQ_POCHTA_QUEUE", "pochta.send")
 
-PASSWORD_RESET_KEYS: list[str] = getenv(
-    "PASSWORD_RESET_KEYS", Fernet.generate_key().decode("utf-8")
-).split("|")
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        env_nested_delimiter="__",
+        env_ignore_empty=True,
+        nested_model_default_partial_update=True,
+    )
 
-EMAIL_CONFIRMATION_KEYS: list[str] = getenv(
-    "EMAIL_CONFIRMATION_KEYS", Fernet.generate_key().decode("utf-8")
-).split("|")
+    production_mode: bool = False
 
-DEMO_WEBHOOK_URL: str | None = getenv("DEMO_WEBHOOK_URL", None)
-VACANCY_WEBHOOK_URL: str | None = getenv("VACANCY_WEBHOOK_URL", None)
+    @computed_field
+    @property
+    def is_testing_mode(self) -> bool:
+        return "pytest" in sys.modules
 
-MUB_KEY: str = getenv("MUB_KEY", "local")
+    mub_key: str = "local"
 
-SUPBOT_TOKEN: str | None = getenv("SUPBOT_TOKEN")
-SUPBOT_GROUP_ID: str | None = getenv("SUPBOT_GROUP_ID")
-SUPBOT_CHANNEL_ID: str | None = getenv("SUPBOT_CHANNEL_ID")
-SUPBOT_POLLING: bool = getenv("SUPBOT_POLLING", "0") == "1"
-SUPBOT_WEBHOOK_URL: str = getenv("SUPBOT_WEBHOOK_URL", "http://localhost:5100")
+    bridge_base_url: str = "http://localhost:8000"
+    cookie_domain: str = "localhost"
 
-EMAIL_HOSTNAME: str | None = getenv("EMAIL_HOSTNAME")
-EMAIL_USERNAME: str | None = getenv("EMAIL_USERNAME")
-EMAIL_PASSWORD: str | None = getenv("EMAIL_PASSWORD")
-EMAIL_INITIALIZED: bool = all((EMAIL_HOSTNAME, EMAIL_USERNAME, EMAIL_PASSWORD))
-EMAIL_PORT = int(getenv("EMAIL_PORT", 465))
-EMAIL_TIMEOUT = int(getenv("EMAIL_TIMEOUT", 20))
-EMAIL_USE_TLS: bool = getenv("EMAIL_USE_TLS", "1") == "1"
+    password_reset_keys: FernetSettings = FernetSettings(encryption_ttl=60 * 60)
+    email_confirmation_keys: FernetSettings = FernetSettings(
+        encryption_ttl=60 * 60 * 24
+    )
+
+    demo_webhook_url: str | None = None
+    vacancy_webhook_url: str | None = None
+
+    base_path: Path = Path.cwd()
+    avatars_folder: Path = Path("avatars")
+
+    @computed_field
+    @property
+    def avatars_path(self) -> Path:
+        return self.base_path / self.avatars_folder
+
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    postgres_username: str = "test"
+    postgres_password: str = "test"
+    postgres_database: str = "test"
+    postgres_schema: str | None = None
+    postgres_automigrate: bool = True
+    postgres_echo: bool = True
+    postgres_pool_recycle: int = 280
+
+    @computed_field
+    @property
+    def postgres_dsn(self) -> str:
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg",
+            username=self.postgres_username,
+            password=self.postgres_password,
+            host=self.postgres_host,
+            port=self.postgres_port,
+            path=self.postgres_database,
+        ).unicode_string()
+
+    mq_host: str = "localhost"
+    mq_port: int = 5672
+    mq_username: str = "guest"
+    mq_password: str = "guest"
+    mq_pochta_queue: str = "pochta.send"
+
+    @computed_field
+    @property
+    def mq_dsn(self) -> str:
+        return AmqpDsn.build(
+            scheme="amqp",
+            username=self.mq_username,
+            password=self.mq_password,
+            host=self.mq_host,
+            port=self.mq_port,
+        ).unicode_string()
+
+    email: EmailSettings | None = None
+    supbot: SupbotSettings | None = None
+
+
+settings = Settings()
 
 smtp_client: SMTP | None = (
-    SMTP(
-        hostname=EMAIL_HOSTNAME,
-        username=EMAIL_USERNAME,
-        password=EMAIL_PASSWORD,
-        use_tls=EMAIL_USE_TLS,
-        port=EMAIL_PORT,
-        timeout=EMAIL_TIMEOUT,
+    None
+    if settings.email is None
+    else SMTP(
+        hostname=settings.email.hostname,
+        username=settings.email.username,
+        password=settings.email.password,
+        use_tls=settings.email.use_tls,
+        port=settings.email.port,
+        timeout=settings.email.timeout,
     )
-    if EMAIL_INITIALIZED
-    else None
 )
-
-LOCAL_PORT: str = getenv("LOCAL_PORT", "8000")
-
-BRIDGE_BASE_URL: str = getenv("BRIDGE_BASE_URL", f"http://localhost:{LOCAL_PORT}")
-
-convention = {
-    "ix": "ix_%(column_0_label)s",  # noqa: WPS323
-    "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
-    "ck": "ck_%(table_name)s_%(constraint_name)s",  # noqa: WPS323
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",  # noqa: WPS323
-    "pk": "pk_%(table_name)s",  # noqa: WPS323
-}
 
 engine = create_async_engine(
-    DB_URL,
-    pool_recycle=280,  # noqa: WPS432
-    echo=not PRODUCTION_MODE,
+    settings.postgres_dsn,
+    echo=settings.postgres_echo,
+    pool_recycle=settings.postgres_pool_recycle,
 )
-db_meta = MetaData(naming_convention=convention, schema=DB_SCHEMA)
+db_meta = MetaData(
+    naming_convention=sqlalchemy_naming_convention,
+    schema=settings.postgres_schema,
+)
 sessionmaker = async_sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -103,15 +160,15 @@ class Base(AsyncAttrs, DeclarativeBase, MappingBase):
     metadata = db_meta
 
 
-pochta_producer = RabbitDirectProducer(queue_name=MQ_POCHTA_QUEUE)
+pochta_producer = RabbitDirectProducer(queue_name=settings.mq_pochta_queue)
 
 password_reset_cryptography = CryptographyProvider(
-    PASSWORD_RESET_KEYS,
-    encryption_ttl=60 * 60,
+    settings.password_reset_keys.keys,
+    encryption_ttl=settings.password_reset_keys.encryption_ttl,
 )
 email_confirmation_cryptography = CryptographyProvider(
-    EMAIL_CONFIRMATION_KEYS,
-    encryption_ttl=60 * 60 * 24,
+    settings.email_confirmation_keys.keys,
+    encryption_ttl=settings.email_confirmation_keys.encryption_ttl,
 )
 
 token_generator = TokenGenerator(randomness=40, length=50)

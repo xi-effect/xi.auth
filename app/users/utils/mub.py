@@ -4,7 +4,7 @@ from fastapi import Depends
 from fastapi.security import APIKeyHeader
 from starlette.status import HTTP_401_UNAUTHORIZED
 
-from app.common.config import MUB_KEY
+from app.common.config import settings
 from app.common.fastapi_ext import Responses, with_responses
 
 MUB_KEY_HEADER_NAME: Final[str] = "X-MUB-Secret"
@@ -21,7 +21,7 @@ class MUBResponses(Responses):
 
 @with_responses(MUBResponses)
 def mub_key_verification(mub_key: MUBKeyHeader = None) -> None:
-    if mub_key != MUB_KEY:
+    if mub_key != settings.mub_key:
         raise MUBResponses.INVALID_MUB_KEY.value
 
 

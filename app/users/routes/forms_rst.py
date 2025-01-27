@@ -7,7 +7,7 @@ from filetype import filetype  # type: ignore[import-untyped]
 from filetype.types.archive import Pdf  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field
 
-from app.common.config import DEMO_WEBHOOK_URL, VACANCY_WEBHOOK_URL
+from app.common.config import settings
 from app.common.fastapi_ext import APIRouterExt, Responses
 from app.common.schemas.vacancy_form_sch import VacancyFormSchema
 
@@ -41,7 +41,7 @@ class DemoFormSchema(BaseModel):
 )
 async def apply_for_demonstration(demo_form: DemoFormSchema) -> None:
     await execute_discord_webhook(
-        url=DEMO_WEBHOOK_URL,
+        url=settings.demo_webhook_url,
         content="\n- ".join(
             ["**Новая запись на демонстрацию:**", f"Имя: {demo_form.name}"]
             + demo_form.contacts
@@ -65,7 +65,7 @@ async def apply_for_vacancy_old(vacancy_form: VacancyFormSchema) -> None:
     if vacancy_form.message is not None:
         content = f"{content}>>> {vacancy_form.message}"
 
-    await execute_discord_webhook(url=VACANCY_WEBHOOK_URL, content=content)
+    await execute_discord_webhook(url=settings.vacancy_webhook_url, content=content)
 
 
 class FileFormatResponses(Responses):
@@ -96,7 +96,7 @@ async def apply_for_vacancy(
         raise FileFormatResponses.WRONG_FORMAT.value
 
     await execute_discord_webhook(
-        url=VACANCY_WEBHOOK_URL,
+        url=settings.vacancy_webhook_url,
         content="\n".join(
             iter_vacancy_message_lines(
                 position=position,

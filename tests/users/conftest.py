@@ -5,7 +5,7 @@ import pytest
 from faker import Faker
 from fastapi.testclient import TestClient
 
-from app.common.config import COOKIE_DOMAIN
+from app.common.config import settings
 from app.users.models.sessions_db import Session
 from app.users.models.users_db import User
 from app.users.utils.authorization import AUTH_COOKIE_NAME, AUTH_HEADER_NAME
@@ -100,7 +100,7 @@ def use_cookie_auth(request: PytestRequest[bool]) -> bool:
 
 @pytest.fixture(scope="session")
 def authorized_client_base(client: TestClient) -> TestClient:
-    return TestClient(client.app, base_url=f"http://{COOKIE_DOMAIN}")
+    return TestClient(client.app, base_url=f"http://{settings.cookie_domain}")
 
 
 @pytest.fixture()
@@ -137,7 +137,7 @@ def other_session_token(other_session: Session) -> str:
 
 @pytest.fixture(scope="session")
 def other_client_base(client: TestClient) -> TestClient:
-    return TestClient(client.app, base_url=f"http://{COOKIE_DOMAIN}")
+    return TestClient(client.app, base_url=f"http://{settings.cookie_domain}")
 
 
 @pytest.fixture()

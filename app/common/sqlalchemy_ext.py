@@ -1,11 +1,16 @@
 from __future__ import annotations
 
+import asyncio
+import sys
 from collections.abc import Sequence
 from contextvars import ContextVar
 from typing import Any, Self, TypeVar
 
 from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 session_context: ContextVar[AsyncSession | None] = ContextVar("session", default=None)
 
@@ -83,3 +88,12 @@ class MappingBase:
     async def delete(self) -> None:
         await db.session.delete(self)
         await db.session.flush()
+
+
+sqlalchemy_naming_convention = {
+    "ix": "ix_%(column_0_label)s",  # noqa: WPS323
+    "uq": "uq_%(table_name)s_%(column_0_name)s",  # noqa: WPS323
+    "ck": "ck_%(table_name)s_%(constraint_name)s",  # noqa: WPS323
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",  # noqa: WPS323
+    "pk": "pk_%(table_name)s",  # noqa: WPS323
+}

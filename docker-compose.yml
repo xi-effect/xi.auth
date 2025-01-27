@@ -54,8 +54,11 @@ services:
         source: ./alembic.ini
         target: /backend/alembic.ini
     environment:
-      DB_LINK: postgresql+psycopg://test:test@db:5432/test
-      DB_SCHEMA: xi_auth
+      postgres_host: db:5432
+      postgres_username: test
+      postgres_password: test
+      postgres_database: test
+      postgres_schema: xi_auth
     entrypoint: sh
 
   api:
@@ -79,7 +82,12 @@ services:
       - ./tests:/backend/tests
     environment:
       WATCHFILES_FORCE_POLLING: true
-      DB_LINK: postgresql+psycopg://test:test@db:5432/test
-      MQ_URL: amqp://guest:guest@mq
-      DB_SCHEMA: xi_auth
-      # DATABASE_MIGRATED: "1"
+      postgres_username: test
+      postgres_password: test
+      postgres_database: test
+      postgres_schema: xi_auth
+      # postgres_automigrate: false
+      mq_host: localhost
+      mq_port: 5672
+      mq_username: guest
+      mq_password: guest
