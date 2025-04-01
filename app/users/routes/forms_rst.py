@@ -2,14 +2,12 @@ from collections.abc import Iterator
 from typing import Annotated, BinaryIO
 
 from discord_webhook import AsyncDiscordWebhook
-from fastapi import File, HTTPException, UploadFile
-from filetype import filetype  # type: ignore[import-untyped]
-from filetype.types.archive import Pdf  # type: ignore[import-untyped]
-from pydantic import BaseModel, Field
+from fastapi import Form, HTTPException
 
 from app.common.config import settings
-from app.common.fastapi_ext import APIRouterExt, Responses
-from app.common.schemas.vacancy_form_sch import VacancyFormSchema
+from app.common.fastapi_ext import APIRouterExt
+from app.common.schemas.demo_form_sch import DemoFormSchema
+from app.users.dependencies.forms_dep import ResumeFile
 
 router = APIRouterExt(tags=["forms"])
 
@@ -31,11 +29,6 @@ async def execute_discord_webhook(
     (await webhook.execute()).raise_for_status()
 
 
-class DemoFormSchema(BaseModel):
-    name: str
-    contacts: Annotated[list[str], Field(min_length=1)]
-
-
 @router.post(
     "/demo-applications/", status_code=204, summary="Apply for a demonstration"
 )
@@ -47,29 +40,6 @@ async def apply_for_demonstration(demo_form: DemoFormSchema) -> None:
             + demo_form.contacts
         ),
     )
-
-
-@router.post(
-    "/vacancy-applications/",
-    status_code=204,
-    summary="Use POST /api/v2/vacancy-applications/ instead",
-    deprecated=True,
-)
-async def apply_for_vacancy_old(vacancy_form: VacancyFormSchema) -> None:
-    content = (
-        f"**Новый отклик на вакансию {vacancy_form.position}**\n"
-        + f"- Имя: {vacancy_form.name}\n"
-        + f"- Телеграм: {vacancy_form.telegram}\n"
-        + f"- [Резюме](<{vacancy_form.link}>)\n"
-    )
-    if vacancy_form.message is not None:
-        content = f"{content}>>> {vacancy_form.message}"
-
-    await execute_discord_webhook(url=settings.vacancy_webhook_url, content=content)
-
-
-class FileFormatResponses(Responses):
-    WRONG_FORMAT = 415, "Invalid file format"
 
 
 def iter_vacancy_message_lines(
@@ -86,15 +56,12 @@ def iter_vacancy_message_lines(
     "/v2/vacancy-applications/", status_code=204, summary="Apply for a vacancy"
 )
 async def apply_for_vacancy(
-    position: Annotated[str, File()],
-    name: Annotated[str, File()],
-    telegram: Annotated[str, File()],
-    resume: UploadFile,
-    message: Annotated[str | None, File()] = None,
+    position: Annotated[str, Form()],
+    name: Annotated[str, Form()],
+    telegram: Annotated[str, Form()],
+    resume: ResumeFile,
+    message: Annotated[str | None, Form()] = None,
 ) -> None:
-    if not filetype.match(resume.file, [Pdf()]):
-        raise FileFormatResponses.WRONG_FORMAT.value
-
     await execute_discord_webhook(
         url=settings.vacancy_webhook_url,
         content="\n".join(

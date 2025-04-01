@@ -1,6 +1,6 @@
 from typing import Generic, TypeVar
 
-from aiogram.types import ChatMemberUpdated, Message, Update, User
+from aiogram.types import ChatMemberUpdated, Document, Message, Update, User
 from polyfactory.factories.pydantic_factory import ModelFactory
 from pydantic import BaseModel
 
@@ -26,3 +26,7 @@ class UserFactory(ModelFactory[User]):
 
 class ChatMemberUpdatedFactory(BaseModelFactory[ChatMemberUpdated]):
     __model__ = ChatMemberUpdated
+
+
+class DocumentFactory(ModelFactory[Document]):
+    __model__ = Document

@@ -2,8 +2,7 @@ from pydantic import BaseModel
 
 
 class VacancyFormSchema(BaseModel):
+    position: str
     name: str
     telegram: str
-    position: str
-    link: str
     message: str | None = None

@@ -166,14 +166,3 @@ def invalid_mub_key_headers(
     if request.param:
         return {"X-MUB-Secret": faker.pystr()}
     return None
-
-
-@pytest.fixture()
-def vacancy_form_data(faker: Faker) -> dict[str, Any]:
-    return {
-        "name": faker.name(),
-        "position": faker.sentence(nb_words=2),
-        "telegram": faker.url(),
-        "link": faker.url(),
-        "message": faker.sentence(),
-    }
