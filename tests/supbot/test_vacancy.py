@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, BinaryIO
 
 import pytest
+from aiogram import Bot
 from aiogram.fsm.state import State
 from aiogram.fsm.storage.base import BaseStorage, StorageKey
 from aiogram.methods import SendMessage
@@ -11,13 +12,20 @@ from respx import MockRouter
 
 from app.supbot import texts
 from app.supbot.routers.vacancy_tgm import VacancyStates
+from app.supbot.utils.filters import DocumentErrorType, DocumentFilter
+from tests.common.mock_stack import MockStack
 from tests.common.respx_ext import assert_last_httpx_request
 from tests.supbot.conftest import (
     EXPECTED_MAIN_MENU_KEYBOARD_MARKUP,
     MockedBot,
     WebhookUpdater,
 )
-from tests.supbot.factories import MessageFactory, UpdateFactory, UserFactory
+from tests.supbot.factories import (
+    DocumentFactory,
+    MessageFactory,
+    UpdateFactory,
+    UserFactory,
+)
 
 NAVIGATION_KEYBOARD_MARKUP = {
     "keyboard": [
@@ -308,6 +316,8 @@ async def test_sending_telegram(
 @pytest.mark.anyio()
 async def test_sending_resume(
     faker: Faker,
+    mock_stack: MockStack,
+    pdf_data: tuple[str, bytes, str],
     webhook_updater: WebhookUpdater,
     mocked_bot: MockedBot,
     bot_storage: BaseStorage,
@@ -316,12 +326,18 @@ async def test_sending_resume(
     tg_user_id: int,
 ) -> None:
     await bot_storage.set_state(bot_storage_key, VacancyStates.sending_resume)
-    resume: str = faker.url()
+
+    mock_stack.enter_async_mock(Bot, "download", return_value=pdf_data[1])
 
     webhook_updater(
         UpdateFactory.build(
             message=MessageFactory.build(
-                text=resume,
+                document=DocumentFactory.build(
+                    file_name=pdf_data[0],
+                    mime_type=pdf_data[2],
+                    file_id=faker.uuid4(),
+                    file_size=len(pdf_data[1]),
+                ),
                 chat=Chat(id=tg_chat_id, type="private"),
                 from_user=UserFactory.build(id=tg_user_id),
             ),
@@ -329,7 +345,8 @@ async def test_sending_resume(
     )
 
     assert await bot_storage.get_state(bot_storage_key) == VacancyStates.sending_comment
-    assert await bot_storage.get_data(bot_storage_key) == {"link": resume}
+    assert await bot_storage.get_data(bot_storage_key) == {"resume": pdf_data}
+
     mocked_bot.assert_next_api_call(
         SendMessage,
         {
@@ -338,7 +355,143 @@ async def test_sending_resume(
             "reply_markup": SENDING_INFO_KEYBOARD_MARKUP,
         },
     )
+    mocked_bot.assert_no_more_api_calls()
 
+
+@pytest.mark.anyio()
+async def test_sending_resume_unsupported_message(
+    faker: Faker,
+    webhook_updater: WebhookUpdater,
+    mocked_bot: MockedBot,
+    bot_storage: BaseStorage,
+    bot_storage_key: StorageKey,
+    tg_chat_id: int,
+    tg_user_id: int,
+) -> None:
+    await bot_storage.set_state(bot_storage_key, VacancyStates.sending_resume)
+
+    webhook_updater(
+        UpdateFactory.build(
+            message=MessageFactory.build(
+                text=faker.sentence(),
+                chat=Chat(id=tg_chat_id, type="private"),
+                from_user=UserFactory.build(id=tg_user_id),
+            ),
+        )
+    )
+
+    assert await bot_storage.get_state(bot_storage_key) == VacancyStates.sending_resume
+
+    mocked_bot.assert_next_api_call(
+        SendMessage,
+        {
+            "chat_id": tg_chat_id,
+            "text": texts.VACANCY_NO_DOCUMENT_MESSAGE,
+        },
+    )
+    mocked_bot.assert_no_more_api_calls()
+
+
+@pytest.mark.anyio()
+async def test_sending_resume_invalid_file_format(
+    faker: Faker,
+    mock_stack: MockStack,
+    webhook_updater: WebhookUpdater,
+    mocked_bot: MockedBot,
+    bot_storage: BaseStorage,
+    bot_storage_key: StorageKey,
+    tg_chat_id: int,
+    tg_user_id: int,
+) -> None:
+    await bot_storage.set_state(bot_storage_key, VacancyStates.sending_resume)
+
+    mock_stack.enter_async_mock(
+        Bot, "download", return_value=faker.random.randbytes(100)
+    )
+
+    webhook_updater(
+        UpdateFactory.build(
+            message=MessageFactory.build(
+                document=DocumentFactory.build(
+                    file_name=faker.file_name(extension="pdf"),
+                    mime_type="application/pdf",
+                    file_size=faker.random_int(
+                        min=1, max=DocumentFilter.MAX_DOCUMENT_SIZE - 1
+                    ),
+                ),
+                chat=Chat(id=tg_chat_id, type="private"),
+                from_user=UserFactory.build(id=tg_user_id),
+            ),
+        )
+    )
+
+    assert await bot_storage.get_state(bot_storage_key) == VacancyStates.sending_resume
+
+    mocked_bot.assert_next_api_call(
+        SendMessage,
+        {
+            "chat_id": tg_chat_id,
+            "text": texts.VACANCY_UNSUPPORTED_DOCUMENT_TYPE_MESSAGE,
+        },
+    )
+    mocked_bot.assert_no_more_api_calls()
+
+
+@pytest.mark.anyio()
+@pytest.mark.parametrize(
+    ("document_error", "expected_message"),
+    [
+        pytest.param(
+            DocumentErrorType.WRONG_MIME_TYPE,
+            texts.VACANCY_UNSUPPORTED_DOCUMENT_TYPE_MESSAGE,
+            id="wrong_mime_type",
+        ),
+        pytest.param(
+            DocumentErrorType.FILE_TO_LARGE,
+            texts.VACANCY_DOCUMENT_TOO_LARGE_MESSAGE,
+            id="file_to_large",
+        ),
+    ],
+)
+async def test_sending_resume_unsupported_document(
+    faker: Faker,
+    webhook_updater: WebhookUpdater,
+    mocked_bot: MockedBot,
+    bot_storage: BaseStorage,
+    bot_storage_key: StorageKey,
+    tg_chat_id: int,
+    tg_user_id: int,
+    document_error: DocumentErrorType,
+    expected_message: str,
+) -> None:
+    await bot_storage.set_state(bot_storage_key, VacancyStates.sending_resume)
+
+    if document_error == DocumentErrorType.WRONG_MIME_TYPE:
+        mime_type = faker.mime_type(category="audio")
+        file_size = faker.random_int(min=1, max=DocumentFilter.MAX_DOCUMENT_SIZE - 1)
+    elif document_error == DocumentErrorType.FILE_TO_LARGE:
+        mime_type = "application/pdf"
+        file_size = DocumentFilter.MAX_DOCUMENT_SIZE + faker.random_int(min=1)
+
+    webhook_updater(
+        UpdateFactory.build(
+            message=MessageFactory.build(
+                document=DocumentFactory.build(
+                    file_name=faker.file_name(extension="pdf"),
+                    mime_type=mime_type,
+                    file_size=file_size,
+                ),
+                chat=Chat(id=tg_chat_id, type="private"),
+                from_user=UserFactory.build(id=tg_user_id),
+            ),
+        )
+    )
+
+    assert await bot_storage.get_state(bot_storage_key) == VacancyStates.sending_resume
+
+    mocked_bot.assert_next_api_call(
+        SendMessage, {"chat_id": tg_chat_id, "text": expected_message}
+    )
     mocked_bot.assert_no_more_api_calls()
 
 
@@ -353,6 +506,8 @@ async def test_sending_resume(
 async def test_sending_comment(
     faker: Faker,
     users_respx_mock: MockRouter,
+    pdf_data: tuple[str, BinaryIO, str],
+    vacancy_form_data: dict[str, Any],
     webhook_updater: WebhookUpdater,
     mocked_bot: MockedBot,
     bot_storage: BaseStorage,
@@ -361,25 +516,27 @@ async def test_sending_comment(
     tg_user_id: int,
     is_comment_provided: bool,
 ) -> None:
+    if not is_comment_provided:
+        vacancy_form_data["message"] = None
+
     public_users_bridge_mock = users_respx_mock.post(
-        path="/api/vacancy-applications/",
+        path="/api/v2/vacancy-applications/",
+        data=vacancy_form_data,
+        files={"resume": pdf_data},
     ).respond(status_code=204)
 
-    data: dict[str, Any] = {
-        "name": faker.name(),
-        "position": faker.sentence(nb_words=2),
-        "telegram": faker.url(),
-        "link": faker.url(),
-    }
-    if is_comment_provided:
-        data["message"] = faker.sentence(nb_words=5)
-    await bot_storage.update_data(bot_storage_key, data)
+    vacancy_form_data["resume"] = pdf_data
+    await bot_storage.update_data(bot_storage_key, vacancy_form_data)
     await bot_storage.set_state(bot_storage_key, VacancyStates.sending_comment)
 
     webhook_updater(
         UpdateFactory.build(
             message=MessageFactory.build(
-                text=data["message"] if is_comment_provided else texts.SKIP_BUTTON_TEXT,
+                text=(
+                    vacancy_form_data["message"]
+                    if is_comment_provided
+                    else texts.SKIP_BUTTON_TEXT
+                ),
                 chat=Chat(id=tg_chat_id, type="private"),
                 from_user=UserFactory.build(id=tg_user_id),
             ),
@@ -400,8 +557,7 @@ async def test_sending_comment(
 
     assert_last_httpx_request(
         public_users_bridge_mock,
-        expected_path="/api/vacancy-applications/",
-        expected_json=data,
+        expected_path="/api/v2/vacancy-applications/",
     )
 
 
@@ -483,7 +639,6 @@ async def test_going_back(
         pytest.param(VacancyStates.sending_specialization, id="sending_specialization"),
         pytest.param(VacancyStates.sending_name, id="sending_name"),
         pytest.param(VacancyStates.sending_telegram, id="sending_telegram"),
-        pytest.param(VacancyStates.sending_resume, id="sending_resume"),
         pytest.param(VacancyStates.sending_comment, id="sending_comment"),
     ],
 )

@@ -1,12 +1,9 @@
-from typing import Any
+from typing import Any, BinaryIO
 from unittest.mock import Mock
 
 import pytest
 from discord_webhook import AsyncDiscordWebhook
 from faker import Faker
-from faker_file.providers.pdf_file.generators.pil_generator import (  # type: ignore[import-untyped]
-    PilPdfGenerator,
-)
 from starlette.testclient import TestClient
 
 from tests.common.assert_contains_ext import assert_nodata_response, assert_response
@@ -57,50 +54,11 @@ async def test_demo_form_submitting_missing_webhook_url(
 
 
 @pytest.mark.anyio()
-async def test_old_vacancy_form_submitting(
-    faker: Faker,
-    mock_stack: MockStack,
-    client: TestClient,
-    vacancy_form_data: dict[str, Any],
-) -> None:
-    response_mock = Mock()
-    response_mock.raise_for_status = Mock()
-    execute_mock = mock_stack.enter_async_mock(
-        AsyncDiscordWebhook, "execute", return_value=response_mock
-    )
-    mock_stack.enter_mock(
-        "app.users.routes.forms_rst.settings.vacancy_webhook_url", return_value=""
-    )
-
-    assert_nodata_response(
-        client.post("/api/vacancy-applications/", json=vacancy_form_data)
-    )
-    execute_mock.assert_called_once()
-    response_mock.raise_for_status.assert_called_once()
-
-
-@pytest.mark.anyio()
-async def test_old_vacancy_form_submitting_missing_webhook_url(
-    faker: Faker, client: TestClient, vacancy_form_data: dict[str, Any]
-) -> None:
-    assert_response(
-        client.post("/api/vacancy-applications/", json=vacancy_form_data),
-        expected_code=500,
-        expected_json={"detail": "Webhook url is not set"},
-    )
-
-
-@pytest.fixture()
-async def pdf(faker: Faker) -> bytes:
-    return faker.pdf_file(raw=True, pdf_generator_cls=PilPdfGenerator)  # type: ignore[no-any-return]
-
-
-@pytest.mark.anyio()
 async def test_vacancy_form_submitting(
     mock_stack: MockStack,
     client: TestClient,
+    pdf_data: tuple[str, BinaryIO, str],
     vacancy_form_data: dict[str, Any],
-    pdf: bytes,
 ) -> None:
     response_mock = Mock()
     response_mock.raise_for_status = Mock()
@@ -115,7 +73,7 @@ async def test_vacancy_form_submitting(
         client.post(
             "/api/v2/vacancy-applications/",
             data=vacancy_form_data,
-            files={"resume": ("resume.pdf", pdf, "application/pdf")},
+            files={"resume": pdf_data},
         )
     )
     execute_mock.assert_called_once()
@@ -141,13 +99,15 @@ async def test_vacancy_form_submitting_invalid_file_format(
 
 @pytest.mark.anyio()
 async def test_vacancy_form_submitting_missing_webhook_url(
-    client: TestClient, vacancy_form_data: dict[str, Any], pdf: bytes
+    client: TestClient,
+    pdf_data: tuple[str, BinaryIO, str],
+    vacancy_form_data: dict[str, Any],
 ) -> None:
     assert_response(
         client.post(
             "/api/v2/vacancy-applications/",
             data=vacancy_form_data,
-            files={"resume": ("resume.pdf", pdf, "application/pdf")},
+            files={"resume": pdf_data},
         ),
         expected_code=500,
         expected_json={"detail": "Webhook url is not set"},
