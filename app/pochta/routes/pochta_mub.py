@@ -5,6 +5,7 @@ from fastapi import File, Form, HTTPException, UploadFile
 
 from app.common.config import settings, smtp_client
 from app.common.fastapi_ext import APIRouterExt
+from app.pochta.dependencies.redis_dep import RedisConnection
 
 router = APIRouterExt(tags=["pochta mub"])
 
@@ -30,3 +31,12 @@ async def send_email_from_file(
 
     async with smtp_client as smtp:
         await smtp.send_message(message)
+
+
+@router.post("/")
+async def home(r: RedisConnection) -> str:
+    await r.xadd(
+        settings.redis_pochta_stream,
+        {"key": "value"},
+    )
+    return f"Message was added to stream {settings.redis_pochta_stream}"

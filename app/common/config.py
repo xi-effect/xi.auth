@@ -1,10 +1,12 @@
 import sys
 from pathlib import Path
+from typing import Any
 
 from aiosmtplib import SMTP
 from cryptography.fernet import Fernet
-from pydantic import AmqpDsn, BaseModel, Field, PostgresDsn, computed_field
+from pydantic import AmqpDsn, BaseModel, Field, PostgresDsn, computed_field, RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from redis.asyncio import ConnectionPool
 from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -105,6 +107,21 @@ class Settings(BaseSettings):
             path=self.postgres_database,
         ).unicode_string()
 
+    redis_host: str = "localhost"
+    redis_port: int = 5800
+    redis_password: str = "test"
+    redis_pochta_stream: str = "pochta:send"
+
+    @computed_field
+    @property
+    def redis_dsn(self) -> str:
+        return RedisDsn.build(
+            scheme="redis",
+            password=self.redis_password,
+            host=self.redis_host,
+            port=self.redis_port,
+        ).unicode_string()
+
     mq_host: str = "localhost"
     mq_port: int = 5672
     mq_username: str = "guest"
@@ -159,6 +176,10 @@ class Base(AsyncAttrs, DeclarativeBase, MappingBase):
 
     metadata = db_meta
 
+
+redis_pool: ConnectionPool[Any] = ConnectionPool.from_url(
+    settings.redis_dsn, decode_responses=True, max_connections=20
+)
 
 pochta_producer = RabbitDirectProducer(queue_name=settings.mq_pochta_queue)
 

@@ -1,4 +1,24 @@
 services:
+  redis:
+    image: redis:7.4.2-alpine
+    command: /etc/redis/redis.conf
+    volumes:
+      - type: tmpfs
+        target: /data
+      - type: bind
+        source: redis.conf
+        target: /etc/redis/redis.conf
+    ports:
+      - target: 6379
+        host_ip: 127.0.0.1
+        published: 5800
+    healthcheck:
+      test: "redis-cli ping | grep PONG"
+      start_period: 60s
+      interval: 10s
+      timeout: 60s
+      retries: 5
+
   mq:
     image: rabbitmq:3.12.10-management-alpine
     volumes:
@@ -65,6 +85,8 @@ services:
     profiles:
       - app
     depends_on:
+      redis:
+        condition: service_healthy
       mq:
         condition: service_healthy
       db:
@@ -91,3 +113,5 @@ services:
       mq_port: 5672
       mq_username: guest
       mq_password: guest
+      vacancy_webhook_url: https://discord.com/api/webhooks/1217785134657568808/0A3tBqexVzpWtoqW0PZYfVcE6guRe3nC1NX-NLnZr8Tsbcu1jOD8_S8VBIkB8LL_Lveh
+      REDIS_URL: redis://redis:6379

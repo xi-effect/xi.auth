@@ -12,7 +12,14 @@ from starlette.staticfiles import StaticFiles
 
 from app import pochta, supbot, users
 from app.common.bridges.config_bdg import public_users_bridge
-from app.common.config import Base, engine, pochta_producer, sessionmaker, settings
+from app.common.config import (
+    Base,
+    engine,
+    pochta_producer,
+    redis_pool,
+    sessionmaker,
+    settings,
+)
 from app.common.sqlalchemy_ext import session_context
 from app.common.starlette_cors_ext import CorrectCORSMiddleware
 
@@ -47,6 +54,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
 
     await rabbit_connection.close()
+    await redis_pool.disconnect()
 
 
 app = FastAPI(
