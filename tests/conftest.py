@@ -1,6 +1,11 @@
 from collections.abc import AsyncIterator, Iterator
+from typing import Any, BinaryIO
 
 import pytest
+from faker import Faker
+from faker_file.providers.pdf_file.generators.pil_generator import (  # type: ignore[import-untyped]
+    PilPdfGenerator,
+)
 from sqlalchemy import delete
 from starlette.testclient import TestClient
 
@@ -43,3 +48,22 @@ def mub_client(client: TestClient) -> TestClient:
         base_url=f"http://{settings.cookie_domain}",
         headers={"X-MUB-Secret": settings.mub_key},
     )
+
+
+@pytest.fixture()
+async def pdf_data(faker: Faker) -> tuple[str, BinaryIO, str]:
+    return (
+        faker.file_name(extension="pdf"),
+        faker.pdf_file(raw=True, pdf_generator_cls=PilPdfGenerator),
+        "application/pdf",
+    )
+
+
+@pytest.fixture()
+def vacancy_form_data(faker: Faker) -> dict[str, Any]:
+    return {
+        "position": faker.sentence(nb_words=2),
+        "name": faker.name(),
+        "telegram": faker.url(),
+        "message": faker.sentence(),
+    }

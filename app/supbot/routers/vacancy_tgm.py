@@ -1,3 +1,5 @@
+from typing import BinaryIO
+
 from aiogram import F, Router
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
@@ -8,7 +10,7 @@ from app.common.bridges.config_bdg import public_users_bridge
 from app.common.schemas.vacancy_form_sch import VacancyFormSchema
 from app.supbot import texts
 from app.supbot.utils.aiogram_ext import MessageExt, MessageFromUser
-from app.supbot.utils.filters import command_filter
+from app.supbot.utils.filters import DocumentErrorType, DocumentFilter, command_filter
 
 router = Router()
 
@@ -118,13 +120,11 @@ async def set_telegram_and_request_resume(
     )
 
 
-@router.message(VacancyStates.sending_resume, F.text)
-@router.message(VacancyStates.sending_comment, F.text == texts.BACK_BUTTON_TEXT)
+@router.message(VacancyStates.sending_resume, DocumentFilter())
 async def set_resume_and_request_comment(
-    message: MessageExt, state: FSMContext
+    message: MessageExt, document_data: tuple[str, BinaryIO, str], state: FSMContext
 ) -> None:
-    if message.text != texts.BACK_BUTTON_TEXT:
-        await state.update_data(link=message.text)
+    await state.update_data(resume=document_data)
     await state.set_state(VacancyStates.sending_comment)
     await message.answer(
         text=texts.SEND_INFO_MESSAGE,
@@ -142,13 +142,13 @@ async def submit_vacancy_form(message: MessageExt, state: FSMContext) -> None:
         answers["message"] = message.text
 
     await public_users_bridge.apply_for_vacancy(
-        VacancyFormSchema(
-            name=answers["name"],
+        vacancy_form=VacancyFormSchema(
             position=answers["position"],
+            name=answers["name"],
             telegram=answers["telegram"],
-            link=answers["link"],
             message=answers.get("message"),
-        )
+        ),
+        resume=answers["resume"],
     )
 
     await message.answer(
@@ -158,6 +158,27 @@ async def submit_vacancy_form(message: MessageExt, state: FSMContext) -> None:
         ),
     )
     await state.clear()
+
+
+@router.message(
+    VacancyStates.sending_resume, DocumentFilter(DocumentErrorType.NO_DOCUMENT)
+)
+async def handle_missing_document(message: MessageExt) -> None:
+    await message.answer(texts.VACANCY_NO_DOCUMENT_MESSAGE)
+
+
+@router.message(
+    VacancyStates.sending_resume, DocumentFilter(DocumentErrorType.WRONG_MIME_TYPE)
+)
+async def handle_unsupported_document_type(message: MessageExt) -> None:
+    await message.answer(texts.VACANCY_UNSUPPORTED_DOCUMENT_TYPE_MESSAGE)
+
+
+@router.message(
+    VacancyStates.sending_resume, DocumentFilter(DocumentErrorType.FILE_TO_LARGE)
+)
+async def handle_unsupported_document_size(message: MessageExt) -> None:
+    await message.answer(texts.VACANCY_DOCUMENT_TOO_LARGE_MESSAGE)
 
 
 @router.message(
